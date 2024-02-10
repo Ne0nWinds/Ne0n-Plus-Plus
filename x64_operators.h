@@ -1,36 +1,3 @@
-union xmm {
-	v4 V4;
-	__m128 m128;
-	__m128i m128i;
-
-	force_inline constexpr xmm(v2 a) : V4(a) { } // MOVSD
-	force_inline constexpr xmm(v3 a) : V4(a) { }
-	force_inline constexpr xmm(v4 a) : V4(a) { }
-	force_inline constexpr xmm(__m128 a) : m128(a) { }
-	force_inline constexpr xmm(__m128i a) : m128i(a) { }
-
-	explicit operator v2() const { return { V4.x, V4.y }; }
-	explicit operator v3() const { return { V4.x, V4.y, V4.z }; }
-	explicit operator v4() const { return V4; }
-	operator __m128() const { return m128; }
-	operator __m128i() const { return m128i; }
-};
-
-#if SIMD_WIDTH == 8
-
-union ymm {
-	v8 V8;
-	__m256 m256;
-	__m256i m256i;
-
-	force_inline constexpr ymm(v8 a) : V8(a) { }
-	force_inline constexpr ymm(__m256 a) : m256(a) { }
-	force_inline constexpr ymm(__m256i a) : m256i(a) { }
-	explicit operator v8() const { return V8; }
-};
-
-#endif
-
 MATHCALL v2 operator+(const v2 &a, const v2 &b) {
 	xmm Result = _mm_add_ps(xmm(a), xmm(b));
 	return (v2)Result;
