@@ -110,6 +110,9 @@ MATHCALL f32 f32_clamp(f32 a, f32 min, f32 max) {
 	if (a > max) return max;
 	return a;
 }
+MATHCALL f32 f32_madd(f32 a, f32 b, f32 c) {
+	return a * b + c;
+}
 
 MATHCALL f32 f32_radians(f32 degrees) {
 	return degrees * (PI32 / 180.0f);

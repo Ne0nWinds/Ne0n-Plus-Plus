@@ -26,6 +26,13 @@ MATHCALL v2 operator/(const v2 &a, const v2 &b) {
 MATHCALL void operator/=(v2 &a, const v2 &b) {
 	a = a / b;
 }
+MATHCALL v2 operator&(const v2 &a, const u32x2 &b) {
+	xmm Result = _mm_and_ps(xmm(a), xmm(b));
+	return (v2)Result;
+}
+MATHCALL void operator&=(v2 &a, const u32x2 &b) {
+	a = a & b;
+}
 
 MATHCALL v3 operator+(const v3 &a, const v3 &b) {
 	xmm Result = _mm_add_ps(xmm(a), xmm(b));
@@ -55,6 +62,13 @@ MATHCALL v3 operator/(const v3 &a, const v3 &b) {
 MATHCALL void operator/=(v3 &a, const v3 &b) {
 	a = a / b;
 }
+MATHCALL v3 operator&(const v3 &a, const u32x3 &b) {
+	xmm Result = _mm_and_ps(xmm(a), xmm(b));
+	return (v3)Result;
+}
+MATHCALL void operator&=(v3 &a, const u32x3 &b) {
+	a = a & b;
+}
 
 MATHCALL v4 operator+(const v4 &a, const v4 &b) {
 	xmm Result = _mm_add_ps(xmm(a), xmm(b));
@@ -83,6 +97,13 @@ MATHCALL v4 operator/(const v4 &a, const v4 &b) {
 }
 MATHCALL void operator/=(v4 &a, const v4 &b) {
 	a = a / b;
+}
+MATHCALL v4 operator&(const v4 &a, const u32x4 &b) {
+	xmm Result = _mm_and_ps(xmm(a), xmm(b));
+	return (v4)Result;
+}
+MATHCALL void operator&=(v4 &a, const u32x4 &b) {
+	a = a & b;
 }
 
 #if SIMD_WIDTH == 4
