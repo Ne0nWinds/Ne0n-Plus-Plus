@@ -321,28 +321,41 @@ struct random_state128 {
 	u128 Seed;
 };
 
-MATHCALL u32 u32_random(random_state64 *random_state);
-MATHCALL u32 u32_random(random_state128 *random_state);
 MATHCALL f32 f32_random(random_state64 *random_state);
 MATHCALL f32 f32_random(random_state64 *random_state, f32 min, f32 max);
 MATHCALL f32 f32_random(random_state128 *random_state);
+
+MATHCALL u32 u32_random_pcg(random_state64 *random_state);
+MATHCALL u32 u32_random_pcg(random_state128 *random_state);
+MATHCALL u32 u32_random_lcg(random_state64 *random_state);
+MATHCALL u32 u32_random_lcg(random_state128 *random_state);
+MATHCALL u32 u32_random_xorshift(random_state64 *random_state);
+MATHCALL u32 u32_random_xorshift(random_state128 *random_state);
 
 #define RANDOM_ALGORITHM_PCG 1
 #define RANDOM_ALGORITHM_LCG 2
 #define RANDOM_ALGORITHM_XORSHIFT 3
 
-#ifndef RANDOM_ALGORITHM
-	#define RANDOM_ALGORITHM RANDOM_ALGORITHM_PCG
-#endif
+#define RANDOM_ALGORITHM RANDOM_ALGORITHM_PCG
 
-/* == Profiling == */
+#if RANDOM_ALGORITHM == RANDOM_ALGORITHM_PCG
+#define u32_random u32_random_pcg
+#elif RANDOM_ALGORITHM == RANDOM_ALGORITHM_PCG
+#define u32_random u32_random_lcg
+#elif
+#define u32_random u32_random_xorshift
+#endif
 
 /* == Error Handling == */
 
 struct Error { };
-
 void ErrorAccumulationBegin();
 void ErrorAccumulationEnd();
+
+/* == Profiling / Timing == */
+
+void TimerInit();
+u64 TimerSample();
 
 /* == Memory == */
 
@@ -351,7 +364,37 @@ void ErrorAccumulationEnd();
 #define GB(b) (MB(b) * 1024LLU)
 #define TB(b) (GB(b) * 1024LLU)
 
+struct memory_arena {
+	void *Start;
+	u32 Offset;
+	u32 Size;
+};
+
+void ArenaInit(memory_arena *Arena, u32 ReserveSize, u32 CommitSize = 0);
+void *Push(memory_arena *Arena, u32 Size, u32 Count);
+void Pop(memory_arena *Arena, void *Ptr);
+
+struct DeferredPop {
+	memory_arena *_Arena;
+	void *_Ptr;
+	DeferredPop(memory_arena *Arena, void *Ptr) : _Arena(Arena), _Ptr(Ptr) { };
+
+	force_inline ~DeferredPop() {
+		Pop(_Arena, _Ptr);
+	}
+};
+
+// struct chained_arena
+
 /* == Strings == */
+typedef u8 char8;
+struct string8 {
+	char8 Data;
+	u32 Length;
+};
+
+constexpr u64 StringHash(const string8 &String);
+
 
 /* == File / IO == */
 
@@ -359,12 +402,24 @@ void ErrorAccumulationEnd();
 // thread_local storage
 // work queue
 
+/* == Assets == */
+
 /* == Windowing / Input == */
 void CreateWindow();
 bool ShouldWindowClose();
 void ProcessInputEvents();
 
-/* == Graphics == */
-// Draw texture to screen
+/* == Ray tracing == */
+
+/* == Rasterization == */
 
 /* == Sound == */
+
+struct SoundHandle {
+	u32 H;
+	force_inline explicit operator u32() const { return H; }
+};
+
+void InitSoundEngine();
+SoundHandle PlaySound(u64 Hash);
+void StopSound(SoundHandle Handle);

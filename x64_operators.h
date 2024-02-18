@@ -11,7 +11,6 @@ MATHCALL u32x2 operator*(const u32x2 &a, const u32x2 &b) {
 	xmm Result = _mm_mul_epi32(xmm(a), xmm(b));
 	return (u32x2)Result;
 }
-[[deprecated("SIMD Integer Division is unsupported on x64")]]
 MATHCALL u32x2 operator/(const u32x2 &a, const u32x2 &b) {
 	u32x2 Result = 0;
 	Result.x /= b.x;
@@ -81,7 +80,6 @@ MATHCALL u32x3 operator*(const u32x3 &a, const u32x3 &b) {
 	xmm Result = _mm_mul_epi32(xmm(a), xmm(b));
 	return (u32x3)Result;
 }
-[[deprecated("SIMD Integer Division is unsupported on x64")]]
 MATHCALL u32x3 operator/(const u32x3 &a, const u32x3 &b) {
 	u32x3 Result = 0;
 	Result.x /= b.x;
@@ -152,7 +150,6 @@ MATHCALL u32x4 operator*(const u32x4 &a, const u32x4 &b) {
 	xmm Result = _mm_mul_epi32(xmm(a), xmm(b));
 	return (u32x4)Result;
 }
-[[deprecated("SIMD Integer Division is unsupported on x64")]]
 MATHCALL u32x4 operator/(const u32x4 &a, const u32x4 &b) {
 	u32x4 Result = 0;
 	Result.x /= b.x;
@@ -199,7 +196,7 @@ MATHCALL u32x4 operator^(const u32x4 &a, const u32x4 &b) {
 MATHCALL u32x4 operator~(const u32x4 &a) {
 	xmm Throwaway = xmm((u32)0);
 	xmm AllOnes = _mm_cmpeq_epi32(Throwaway, Throwaway);
-	xmm Result = _mm_xor_ps(AllOnes, xmm(a));
+	xmm Result = _mm_xor_si128(AllOnes, xmm(a));
 	return (u32x4)Result;
 }
 MATHCALL u32x4 operator<<(const u32x4 &a, const u32 &b) {
@@ -409,80 +406,124 @@ MATHCALL v4 operator>>(const v4 &a, const u32 &b) {
 /* == v8 / u32x8 == */
 #if SIMD_WIDTH == 4
 MATHCALL v8 operator+(const v8 &a, const v8 &b) {
-	xmm xmm0 = _mm_add_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_add_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] + b.V4[0], a.V4[1] + b.V4[1]);
+	return Result;
 }
 MATHCALL v8 operator-(const v8 &a, const v8 &b) {
-	xmm xmm0 = _mm_sub_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_sub_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] - b.V4[0], a.V4[1] - b.V4[1]);
+	return Result;
 }
 MATHCALL v8 operator*(const v8 &a, const v8 &b) {
-	xmm xmm0 = _mm_mul_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_mul_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] * b.V4[0], a.V4[1] * b.V4[1]);
+	return Result;
 }
 MATHCALL v8 operator/(const v8 &a, const v8 &b) {
-	xmm xmm0 = _mm_div_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_div_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] / b.V4[0], a.V4[1] / b.V4[1]);
+	return Result;
 }
 MATHCALL v8 operator-(const v8 &a) {
-	u32x4 Sign = SignBit;
-	xmm xmm0 = _mm_xor_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_xor_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(-a.V4[0], -a.V4[1]);
+	return Result;
 }
-MATHCALL v8 operator==(const v4 &a, const v4 &b) {
-	xmm xmm0 = _mm_cmpeq_ps(xmm(a.V4[0]), xmm(a.V4[0]));
-	xmm xmm1 = _mm_cmpeq_ps(xmm(a.V4[1]), xmm(a.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+MATHCALL u32x8 operator==(const v8 &a, const v8 &b) {
+	u32x8 Result = u32x8(a.V4[0] == b.V4[0], a.V4[1] == b.V4[1]);
+	return Result;
 }
-MATHCALL v8 operator!=(const v4 &a, const v4 &b) {
-	xmm xmm0 = _mm_cmpneq_ps(xmm(a.V4[0]), xmm(a.V4[0]));
-	xmm xmm1 = _mm_cmpneq_ps(xmm(a.V4[1]), xmm(a.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+MATHCALL u32x8 operator!=(const v8 &a, const v8 &b) {
+	u32x8 Result = u32x8(a.V4[0] != b.V4[0], a.V4[1] != b.V4[1]);
+	return Result;
 }
-MATHCALL v8 operator>(const v4 &a, const v4 &b) {
-	xmm xmm0 = _mm_cmpgt_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_cmpgt_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+MATHCALL u32x8 operator>(const v8 &a, const v8 &b) {
+	u32x8 Result = u32x8(a.V4[0] > b.V4[0], a.V4[1] > b.V4[1]);
+	return Result;
 }
 MATHCALL u32x8 operator<(const v8 &a, const v8 &b) {
-	xmm xmm0 = _mm_cmplt_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_cmplt_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	u32x8 Result = u32x8(a.V4[0] < b.V4[0], a.V4[1] < b.V4[1]);
+	return Result;
 }
 MATHCALL v8 operator&(const v8 &a, const u32x8 &b) {
-	xmm xmm0 = _mm_and_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_and_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] & b.U32x4[0], a.V4[1] & b.U32x4[1]);
+	return Result;
 }
 MATHCALL v8 operator|(const v8 &a, const u32x8 &b) {
-	xmm xmm0 = _mm_or_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_or_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] | b.U32x4[0], a.V4[1] | b.U32x4[1]);
+	return Result;
 }
 MATHCALL v8 operator^(const v8 &a, const u32x8 &b) {
-	xmm xmm0 = _mm_xor_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_xor_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] ^ b.U32x4[0], a.V4[1] ^ b.U32x4[1]);
+	return Result;
 }
 MATHCALL v8 operator~(const v8 &a) {
-	xmm xmm0 = _mm_xor_ps(xmm(a.V4[0]), xmm(b.V4[0]));
-	xmm xmm1 = _mm_xor_ps(xmm(a.V4[1]), xmm(b.V4[1]));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(~a.V4[0], ~a.V4[1]);
+	return Result;
 }
 MATHCALL v8 operator<<(const v8 &a, const u32 &b) {
-	xmm xmm0 = _mm_sll_epi32(xmm(a), xmm(b));
-	xmm xmm1 = _mm_sll_epi32(xmm(a), xmm(b));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] << b, a.V4[1] << b);
+	return Result;
 }
 MATHCALL v8 operator>>(const v8 &a, const u32 &b) {
-	xmm xmm0 = _mm_srl_epi32(xmm(a), xmm(b));
-	xmm xmm1 = _mm_srl_epi32(xmm(a), xmm(b));
-	return { (v4)xmm0, (v4)xmm1 };
+	v8 Result = v8(a.V4[0] >> b, a.V4[1] >> b);
+	return Result;
+}
+MATHCALL u32x8 operator+(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] + b.U32x4[0], a.U32x4[1] + b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator-(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] - b.U32x4[0], a.U32x4[1] - b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator*(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] * b.U32x4[0], a.U32x4[1] * b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator/(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] / b.U32x4[0], a.U32x4[1] / b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator-(const u32x8 &a) {
+	u32x8 Result = u32x8(-a.U32x4[0], -a.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator==(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] == b.U32x4[0], a.U32x4[1] == b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator!=(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] != b.U32x4[0], a.U32x4[1] != b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator>(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] > b.U32x4[0], a.U32x4[1] > b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator<(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] < b.U32x4[0], a.U32x4[1] < b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator&(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] & b.U32x4[0], a.U32x4[1] & b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator|(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] | b.U32x4[0], a.U32x4[1] | b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator^(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] ^ b.U32x4[0], a.U32x4[1] ^ b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator~(const u32x8 &a) {
+	u32x8 Result = u32x8(~a.U32x4[0], ~a.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator<<(const u32x8 &a, const u32 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] << b, a.U32x4[1] << b);
+	return Result;
+}
+MATHCALL u32x8 operator>>(const u32x8 &a, const u32 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] >> b, a.U32x4[1] >> b);
+	return Result;
 }
 #elif SIMD_WIDTH == 8
 MATHCALL v8 operator+(const v8 &a, const v8 &b) {
@@ -506,7 +547,6 @@ MATHCALL v8 operator-(const v8 &a) {
 	ymm Result = _mm256_xor_ps(ymm(a), ymm(Sign));
 	return (v8)Result;
 }
-
 MATHCALL u32x8 operator==(const v8 &a, const v8 &b) {
 	ymm Result = _mm256_cmp_ps(ymm(a), ymm(b), _CMP_EQ_OQ);
 	return (u32x8)Result;
@@ -547,5 +587,69 @@ MATHCALL v8 operator<<(const v8 &a, const u32 &b) {
 MATHCALL v8 operator>>(const v8 &a, const u32 &b) {
 	ymm Result = _mm256_srlv_epi32(ymm(a), ymm(b));
 	return (v8)Result;
+}
+
+MATHCALL u32x8 operator+(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_add_epi32(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator-(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_sub_epi32(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator*(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_mul_epi32(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator/(const u32x8 &a, const u32x8 &b) {
+	u32x8 Result = u32x8(a.U32x4[0] / b.U32x4[0], a.U32x4[1] / b.U32x4[1]);
+	return Result;
+}
+MATHCALL u32x8 operator-(const u32x8 &a) {
+	u32x8 Result;
+	Result = ~a + 1;
+	return Result;
+}
+MATHCALL u32x8 operator==(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_cmpeq_epi32(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator!=(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_cmpeq_epi32(ymm(a), ymm(b));
+	return ~(u32x8)Result;
+}
+MATHCALL u32x8 operator>(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_cmpgt_epi32(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator<(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_cmpgt_epi32(ymm(a), ymm(b));
+	return ~(u32x8)Result;
+}
+MATHCALL u32x8 operator&(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_and_si256(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator|(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_or_si256(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator^(const u32x8 &a, const u32x8 &b) {
+	ymm Result = _mm256_xor_si256(ymm(a), ymm(b));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator~(const u32x8 &a) {
+	ymm Zero = ymm((u32)0);
+	ymm AllOnes = _mm256_cmpeq_epi32(Zero, Zero);
+	ymm Result = _mm256_xor_si256(AllOnes, ymm(a));
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator<<(const u32x8 &a, const u32 &b) {
+	ymm Result = _mm256_slli_epi32(ymm(a), b);
+	return (u32x8)Result;
+}
+MATHCALL u32x8 operator>>(const u32x8 &a, const u32 &b) {
+	ymm Result = _mm256_srli_epi32(ymm(a), b);
+	return (u32x8)Result;
 }
 #endif

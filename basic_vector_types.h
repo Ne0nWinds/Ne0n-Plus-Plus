@@ -128,15 +128,15 @@ struct alignas(32) u32x8 {
 		struct { u32 x, y, z, w; };
 		u32 Data[8];
 		u64 _u64[4];
-		u32x4 _u32x4[2];
+		u32x4 U32x4[2];
 	};
 	force_inline constexpr u32x8() : _u64 { 0 } { }
 	force_inline constexpr u32x8(u32 n) : Data { n, n, n, n, n, n, n, n } { }
+	force_inline constexpr u32x8(u32x4 a, u32x4 b) : U32x4 { a, b } { }
 	explicit force_inline constexpr u32x8(u32x2 n) : x(n.x), y(n.y), z(0), w(0) { }
 	explicit force_inline constexpr u32x8(u32x3 n) : x(n.x), y(n.y), z(n.z), w(0) { }
 	explicit force_inline constexpr u32x8(u32x4 n) : x(n.x), y(n.y), z(n.z), w(n.w) { }
-	explicit force_inline constexpr u32x8(u32x4 a, u32x4 b) : _u32x4 { a, b } { }
-	explicit force_inline constexpr u32x8(bool n) : _u32x4 { ~(u32)n + 1, ~(u32)n + 1 } { }
+	explicit force_inline constexpr u32x8(bool n) : U32x4 { ~(u32)n + 1, ~(u32)n + 1 } { }
 };
 
 #define define_operators(type1, type2) \
