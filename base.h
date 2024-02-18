@@ -58,6 +58,13 @@ typedef double f64;
 #endif
 
 /* == Math == */
+
+static constexpr f32 F32Epsilon = 1e-5f;
+static constexpr f32 F32Min = 1e-30f;
+static constexpr f32 F32Max = 1e30f;
+static constexpr f32 PI32 = 3.14159265358979323846f;
+static constexpr u32 SignBit = 0x8000'0000;
+
 #ifndef _DEBUG
 	#ifdef PLATFORM_WIN32
 		#define MATHCALL static force_inline __vectorcall
@@ -80,175 +87,7 @@ struct v3;
 struct v4;
 struct v8;
 
-struct alignas(8) v2 {
-	f32 x, y;
-
-	force_inline constexpr v2() : x(0.0f), y(0.0f) { }
-	force_inline constexpr v2(f32 n) : x(n), y(n) { }
-	force_inline constexpr v2(f32 _x, f32 _y) : x(_x), y(_y) { }
-
-	inline constexpr f32 &operator[](u32 Index) {
-		Assert(Index < 2);
-		f32 *Array = (f32 *)this;
-		return Array[Index];
-	}
-};
-
-MATHCALL v2 operator+(const v2 &a, const v2 &b);
-MATHCALL v2 operator-(const v2 &a, const v2 &b);
-MATHCALL v2 operator*(const v2 &a, const v2 &b);
-MATHCALL v2 operator/(const v2 &a, const v2 &b);
-MATHCALL v2 operator&(const v2 &a, const u32x2 &b);
-
-MATHCALL void operator+=(v2 &a, const v2 &b) { a = a + b; }
-MATHCALL void operator-=(v2 &a, const v2 &b) { a = a - b; }
-MATHCALL void operator*=(v2 &a, const v2 &b) { a = a * b; }
-MATHCALL void operator/=(v2 &a, const v2 &b) { a = a / b; }
-MATHCALL void operator&=(v2 &a, const u32x2 &b) { a = a & b; }
-
-struct alignas(16) v3 {
-	f32 x, y, z;
-
-	force_inline constexpr v3() : x(0.0f), y(0.0f), z(0.0f) { }
-	force_inline constexpr v3(f32 n) : x(n), y(n), z(n) { }
-	force_inline constexpr v3(f32 _x, f32 _y, f32 _z) : x(_x), y(_y), z(_z) { }
-	explicit force_inline constexpr v3(const v2& a) : x(a.x), y(a.y), z(0.0f) { }
-	force_inline constexpr v3(const v2& a, f32 b) : x(a.x), y(a.y), z(b) { }
-	force_inline constexpr v3(f32 a, const v2& b) : x(a), y(b.x), z(b.y) { }
-
-	inline constexpr f32 &operator[](u32 Index) {
-		Assert(Index < 3);
-		f32 *Array = (f32 *)this;
-		return Array[Index];
-	}
-};
-
-MATHCALL v3 operator+(const v3 &a, const v3 &b);
-MATHCALL v3 operator-(const v3 &a, const v3 &b);
-MATHCALL v3 operator*(const v3 &a, const v3 &b);
-MATHCALL v3 operator/(const v3 &a, const v3 &b);
-MATHCALL v3 operator&(const v3 &a, const u32x3 &b);
-
-MATHCALL void operator+=(v3 &a, const v3 &b) { a = a + b; }
-MATHCALL void operator-=(v3 &a, const v3 &b) { a = a - b; }
-MATHCALL void operator*=(v3 &a, const v3 &b) { a = a * b; }
-MATHCALL void operator/=(v3 &a, const v3 &b) { a = a / b; }
-MATHCALL void operator&=(v3 &a, const u32x3 &b) { a = a & b; }
-
-struct alignas(16) v4 {
-	f32 x, y, z, w;
-
-	force_inline constexpr v4() : x(0.0f), y(0.0f), z(0.0f), w(0.0f) { }
-	force_inline constexpr v4(f32 n) : x(n), y(n), z(n), w(n) { }
-	force_inline constexpr v4(f32 _x, f32 _y, f32 _z, f32 _w) : x(_x), y(_y), z(_z), w(_w) { }
-	explicit force_inline constexpr v4(const v2& a) : x(a.x), y(a.y), z(0.0f), w(0.0f) { }
-	explicit force_inline constexpr v4(const v3& a) : x(a.x), y(a.y), z(a.z), w(0.0f) { }
-	force_inline constexpr v4(const v2& a, f32 b, f32 c) : x(a.x), y(a.y), z(b), w(c) { }
-	force_inline constexpr v4(const v2& a, const v2& b) : x(a.x), y(a.y), z(b.x), w(b.y) { }
-	force_inline constexpr v4(const v3& a, f32 b) : x(a.x), y(a.y), z(a.z), w(b) { }
-	force_inline constexpr v4(f32 a, const v3& b) : x(a), y(b.x), z(b.y), w(b.z) { }
-
-	inline constexpr f32 &operator[](u32 Index) {
-		Assert(Index < 3);
-		f32 *Array = (f32 *)this;
-		return Array[Index];
-	}
-};
-
-MATHCALL v4 operator+(const v4 &a, const v4 &b);
-MATHCALL v4 operator-(const v4 &a, const v4 &b);
-MATHCALL v4 operator*(const v4 &a, const v4 &b);
-MATHCALL v4 operator/(const v4 &a, const v4 &b);
-MATHCALL v4 operator&(const v4 &a, const u32x4 &b);
-
-MATHCALL void operator+=(v4 &a, const v4 &b) { a = a + b; }
-MATHCALL void operator-=(v4 &a, const v4 &b) { a = a - b; }
-MATHCALL void operator*=(v4 &a, const v4 &b) { a = a * b; }
-MATHCALL void operator/=(v4 &a, const v4 &b) { a = a / b; }
-MATHCALL void operator&=(v4 &a, const u32x4 &b) { a = a & b; }
-
-struct alignas(32) v8 {
-	union {
-		struct { f32 x, y, z, w; };
-		f32 Data[8];
-		v4 V4[2];
-	};
-
-	force_inline constexpr v8() : Data {0.0f} { }
-	force_inline constexpr v8(f32 n) : Data {n,n,n,n,n,n,n,n} { }
-	force_inline constexpr v8(v4 a, v4 b) : V4 { a, b } { }
-
-	inline constexpr f32 &operator[](u32 Index) {
-		Assert(Index < array_len(Data));
-		return Data[Index];
-	}
-};
-
-MATHCALL v8 operator+(const v8 &a, const v8 &b);
-MATHCALL v8 operator-(const v8 &a, const v8 &b);
-MATHCALL v8 operator*(const v8 &a, const v8 &b);
-MATHCALL v8 operator/(const v8 &a, const v8 &b);
-
-MATHCALL void operator+=(v8 &a, const v8 &b) { a = a + b; }
-MATHCALL void operator-=(v8 &a, const v8 &b) { a = a - b; }
-MATHCALL void operator*=(v8 &a, const v8 &b) { a = a * b; }
-MATHCALL void operator/=(v8 &a, const v8 &b) { a = a / b; }
-
-struct alignas(8) u32x2 {
-	union {
-		struct { u32 x, y; };
-		u32 Data[2];
-		u64 _u64;
-	};
-	force_inline constexpr u32x2() : x(0), y(0) { }
-	force_inline constexpr u32x2(u32 n) : x(n), y(n) { }
-	explicit force_inline constexpr u32x2(bool n) : _u64(~(u64)n + 1) { }
-	force_inline constexpr u32x2(u32 _x, u32 _y) : x(_x), y(_y) { }
-};
-
-struct alignas(16) u32x3 {
-	union {
-		struct { u32 x, y, z; };
-		u32 Data[4];
-		u64 _u64[2];
-	};
-	force_inline constexpr u32x3() : _u64 { 0 } { }
-	force_inline constexpr u32x3(u32 n) : Data { n, n, n, n } { }
-	explicit force_inline constexpr u32x3(u32x2 a) : x(a.x), y(a.y), z(0) { }
-	force_inline constexpr u32x3(u32x2 a, u32 b) : x(a.x), y(a.y), z(b) { }
-	explicit force_inline constexpr u32x3(bool n) : _u64 { ~(u64)n + 1, ~(u64)n + 1 } { }
-	force_inline constexpr u32x3(u32 _x, u32 _y, u32 _z) : x(_x), y(_y), z(_z) { }
-};
-
-struct alignas(16) u32x4 {
-	union {
-		struct { u32 x, y, z, w; };
-		u32 Data[4];
-		u64 _u64[2];
-	};
-	force_inline constexpr u32x4() : _u64 { 0 } { }
-	force_inline constexpr u32x4(u32 n) : Data { n, n, n, n } { }
-	explicit force_inline constexpr u32x4(u32x2 n) : x(n.x), y(n.y), z(0), w(0) { }
-	explicit force_inline constexpr u32x4(u32x3 n) : x(n.x), y(n.y), z(n.z), w(0) { }
-	explicit force_inline constexpr u32x4(bool n) : _u64 { ~(u64)n + 1, ~(u64)n + 1 } { }
-	force_inline constexpr u32x4(u32 _x, u32 _y, u32 _z, u32 _w) : x(_x), y(_y), z(_z), w(_z) { }
-};
-
-struct alignas(32) u32x8 {
-	union {
-		struct { u32 x, y, z, w; };
-		u32 Data[8];
-		u64 _u64[4];
-		u32x4 _u32x4[2];
-	};
-	force_inline constexpr u32x8() : _u64 { 0 } { }
-	force_inline constexpr u32x8(u32 n) : Data { n, n, n, n, n, n, n, n } { }
-	explicit force_inline constexpr u32x8(u32x2 n) : x(n.x), y(n.y), z(0), w(0) { }
-	explicit force_inline constexpr u32x8(u32x3 n) : x(n.x), y(n.y), z(n.z), w(0) { }
-	explicit force_inline constexpr u32x8(u32x4 n) : x(n.x), y(n.y), z(n.z), w(n.w) { }
-	explicit force_inline constexpr u32x8(u32x4 a, u32x4 b) : _u32x4 { a, b } { }
-	explicit force_inline constexpr u32x8(bool n) : _u32x4 { ~(u32)n + 1, ~(u32)n + 1 } { }
-};
+#include "basic_vector_types.h"
 
 #if defined(PLATFORM_X64)
 	union xmm {
@@ -258,6 +97,7 @@ struct alignas(32) u32x8 {
 		__m128i m128i;
 
 		force_inline constexpr xmm(f32 a) : V4(0.0f) { V4.x = a; } // movss
+		force_inline constexpr xmm(u32 a) : U32x4((u32)0) { U32x4.x = a; }
 		force_inline constexpr xmm(v2 a) : V4(a) { } // movsd
 		force_inline constexpr xmm(v3 a) : V4(a) { }
 		force_inline constexpr xmm(v4 a) : V4(a) { }
@@ -271,6 +111,12 @@ struct alignas(32) u32x8 {
 		force_inline explicit operator v2() const { return { V4.x, V4.y }; }
 		force_inline explicit operator v3() const { return { V4.x, V4.y, V4.z }; }
 		force_inline explicit operator v4() const { return V4; }
+
+		force_inline explicit operator u32() const { return U32x4.x; }
+		force_inline explicit operator u32x2() const { return { U32x4.x, U32x4.y }; }
+		force_inline explicit operator u32x3() const { return { U32x4.x, U32x4.y, U32x4.z }; }
+		force_inline explicit operator u32x4() const { return U32x4; }
+
 		force_inline operator __m128() const { return m128; }
 		force_inline operator __m128i() const { return m128i; }
 	};
@@ -278,13 +124,18 @@ struct alignas(32) u32x8 {
 	#if SIMD_WIDTH == 8
 		union ymm {
 			v8 V8;
+			u32x8 U32x8;
 			__m256 m256;
 			__m256i m256i;
 
+			force_inline constexpr ymm(f32 a) : V8(0.0f) { V8.x = a; } // movss
+			force_inline constexpr ymm(u32 a) : U32x8((u32)0) { U32x8.x = a; }
 			force_inline constexpr ymm(v8 a) : V8(a) { }
+			force_inline constexpr ymm(u32x8 a) : U32x8(a) { }
 			force_inline constexpr ymm(__m256 a) : m256(a) { }
 			force_inline constexpr ymm(__m256i a) : m256i(a) { }
 			force_inline explicit operator v8() const { return V8; }
+			force_inline explicit operator u32x8() const { return U32x8; }
 			force_inline operator __m256() const { return m256; }
 			force_inline operator __m256i() const { return m256i; }
 		};
@@ -298,11 +149,6 @@ struct alignas(32) u32x8 {
 #define abs(a) ((a < 0) ? a * -1 : a)
 #define min(a, b) ((a < b) ? a : b)
 #define max(a, b) ((a > b) ? a : b)
-static constexpr f32 F32Epsilon = 1e-5f;
-static constexpr f32 F32Min = 1e-30f;
-static constexpr f32 F32Max = 1e30f;
-static constexpr f32 PI32 = 3.14159265358979323846f;
-static constexpr u32 SignBit = 0x8000'0000;
 
 MATHCALL s32 s32_abs(s32 a);
 MATHCALL s64 s64_abs(s64 a);
@@ -365,7 +211,6 @@ MATHCALL v4 v4_lerp(const v4 &a, const v4 &b, f32 t);
 
 /* == SIMD Helpers == */
 
-// TODO: u8x / Text Parsing
 struct u32x;
 struct f32x;
 struct v2x;
@@ -374,26 +219,89 @@ struct v4x;
 struct u128;
 struct u256;
 
-
 MATHCALL f32x operator+(const f32x &a, const f32x &b);
-MATHCALL f32x operator-(const f32x &a, const f32x &b);
-MATHCALL f32x operator*(const f32x &a, const f32x &b);
-MATHCALL f32x operator/(const f32x &a, const f32x &b);
-
 MATHCALL v2x operator+(const v2x &a, const v2x &b);
-MATHCALL v2x operator-(const v2x &a, const v2x &b);
-MATHCALL v2x operator*(const v2x &a, const v2x &b);
-MATHCALL v2x operator/(const v2x &a, const v2x &b);
-
 MATHCALL v3x operator+(const v3x &a, const v3x &b);
-MATHCALL v3x operator-(const v3x &a, const v3x &b);
-MATHCALL v3x operator*(const v3x &a, const v3x &b);
-MATHCALL v3x operator/(const v3x &a, const v3x &b);
-
 MATHCALL v4x operator+(const v4x &a, const v4x &b);
+MATHCALL u32x operator+(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator-(const f32x &a, const f32x &b);
+MATHCALL v2x operator-(const v2x &a, const v2x &b);
+MATHCALL v3x operator-(const v3x &a, const v3x &b);
 MATHCALL v4x operator-(const v4x &a, const v4x &b);
+MATHCALL u32x operator-(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator*(const f32x &a, const f32x &b);
+MATHCALL v2x operator*(const v2x &a, const v2x &b);
+MATHCALL v3x operator*(const v3x &a, const v3x &b);
 MATHCALL v4x operator*(const v4x &a, const v4x &b);
+MATHCALL u32x operator*(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator/(const f32x &a, const f32x &b);
+MATHCALL v2x operator/(const v2x &a, const v2x &b);
+MATHCALL v3x operator/(const v3x &a, const v3x &b);
 MATHCALL v4x operator/(const v4x &a, const v4x &b);
+MATHCALL u32x operator/(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator-(const f32x &a);
+MATHCALL v2x operator-(const v2x &a);
+MATHCALL v3x operator-(const v3x &a);
+MATHCALL v4x operator-(const v4x &a);
+MATHCALL u32x operator-(const u32x &a);
+
+MATHCALL u32x operator==(const f32x &a, const f32x &b);
+MATHCALL u32x operator==(const v2x &a, const v2x &b);
+MATHCALL u32x operator==(const v3x &a, const v3x &b);
+MATHCALL u32x operator==(const v4x &a, const v4x &b);
+MATHCALL u32x operator==(const u32x &a, const u32x &b);
+
+MATHCALL u32x operator!=(const f32x &a, const f32x &b);
+MATHCALL u32x operator!=(const v2x &a, const v2x &b);
+MATHCALL u32x operator!=(const v3x &a, const v3x &b);
+MATHCALL u32x operator!=(const v4x &a, const v4x &b);
+MATHCALL u32x operator!=(const u32x &a, const u32x &b);
+
+MATHCALL u32x operator>(const f32x &a, const f32x &b);
+MATHCALL u32x operator>(const u32x &a, const u32x &b);
+
+MATHCALL u32x operator<(const f32x &a, const f32x &b);
+MATHCALL u32x operator<(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator&(const f32x &a, const u32x &b);
+MATHCALL v2x operator&(const v2x &a, const u32x &b);
+MATHCALL v3x operator&(const v3x &a, const u32x &b);
+MATHCALL v4x operator&(const v4x &a, const u32x &b);
+MATHCALL u32x operator&(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator|(const f32x &a, const u32x &b);
+MATHCALL v2x operator|(const v2x &a, const u32x &b);
+MATHCALL v3x operator|(const v3x &a, const u32x &b);
+MATHCALL v4x operator|(const v4x &a, const u32x &b);
+MATHCALL u32x operator|(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator^(const f32x &a, const u32x &b);
+MATHCALL v2x operator^(const v2x &a, const u32x &b);
+MATHCALL v3x operator^(const v3x &a, const u32x &b);
+MATHCALL v4x operator^(const v4x &a, const u32x &b);
+MATHCALL u32x operator^(const u32x &a, const u32x &b);
+
+MATHCALL f32x operator~(const f32x &a);
+MATHCALL v2x operator~(const v2x &a);
+MATHCALL v3x operator~(const v3x &a);
+MATHCALL v4x operator~(const v4x &a);
+MATHCALL u32x operator~(const u32x &a);
+
+MATHCALL f32x operator<<(const f32x &a, const u32 b);
+MATHCALL v2x operator<<(const v2x &a, const u32 b);
+MATHCALL v3x operator<<(const v3x &a, const u32 b);
+MATHCALL v4x operator<<(const v4x &a, const u32 b);
+MATHCALL u32x operator<<(const u32x &a, const u32 b);
+
+MATHCALL f32x operator>>(const f32x &a, const u32x &b);
+MATHCALL v2x operator>>(const v2x &a, const u32x &b);
+MATHCALL v3x operator>>(const v3x &a, const u32x &b);
+MATHCALL v4x operator>>(const v4x &a, const u32x &b);
+MATHCALL u32x operator>>(const u32x &a, const u32x &b);
 
 #if SIMD_WIDTH == 4
 	#include "simd_helpers_4x.h"
@@ -404,26 +312,6 @@ MATHCALL v4x operator/(const v4x &a, const v4x &b);
 #endif
 
 #include "simd_helpers_common.h"
-
-MATHCALL void operator+=(f32x &a, const f32x &b) { a = a + b; }
-MATHCALL void operator-=(f32x &a, const f32x &b) { a = a - b; }
-MATHCALL void operator*=(f32x &a, const f32x &b) { a = a * b; }
-MATHCALL void operator/=(f32x &a, const f32x &b) { a = a / b; }
-
-MATHCALL void operator+=(v2x &a, const v2x &b) { a = a + b; }
-MATHCALL void operator-=(v2x &a, const v2x &b) { a = a - b; }
-MATHCALL void operator*=(v2x &a, const v2x &b) { a = a * b; }
-MATHCALL void operator/=(v2x &a, const v2x &b) { a = a / b; }
-
-MATHCALL void operator+=(v3x &a, const v3x &b) { a = a + b; }
-MATHCALL void operator-=(v3x &a, const v3x &b) { a = a - b; }
-MATHCALL void operator*=(v3x &a, const v3x &b) { a = a * b; }
-MATHCALL void operator/=(v3x &a, const v3x &b) { a = a / b; }
-
-MATHCALL void operator+=(v4x &a, const v4x &b) { a = a + b; }
-MATHCALL void operator-=(v4x &a, const v4x &b) { a = a - b; }
-MATHCALL void operator*=(v4x &a, const v4x &b) { a = a * b; }
-MATHCALL void operator/=(v4x &a, const v4x &b) { a = a / b; }
 
 /* == Psuedo Randomness == */
 struct random_state64 {
@@ -436,6 +324,7 @@ struct random_state128 {
 MATHCALL u32 u32_random(random_state64 *random_state);
 MATHCALL u32 u32_random(random_state128 *random_state);
 MATHCALL f32 f32_random(random_state64 *random_state);
+MATHCALL f32 f32_random(random_state64 *random_state, f32 min, f32 max);
 MATHCALL f32 f32_random(random_state128 *random_state);
 
 #define RANDOM_ALGORITHM_PCG 1
@@ -446,6 +335,14 @@ MATHCALL f32 f32_random(random_state128 *random_state);
 	#define RANDOM_ALGORITHM RANDOM_ALGORITHM_PCG
 #endif
 
+/* == Profiling == */
+
+/* == Error Handling == */
+
+struct Error { };
+
+void ErrorAccumulationBegin();
+void ErrorAccumulationEnd();
 
 /* == Memory == */
 
@@ -453,3 +350,21 @@ MATHCALL f32 f32_random(random_state128 *random_state);
 #define MB(b) (KB(b) * 1024)
 #define GB(b) (MB(b) * 1024LLU)
 #define TB(b) (GB(b) * 1024LLU)
+
+/* == Strings == */
+
+/* == File / IO == */
+
+/* == Threading == */
+// thread_local storage
+// work queue
+
+/* == Windowing / Input == */
+void CreateWindow();
+bool ShouldWindowClose();
+void ProcessInputEvents();
+
+/* == Graphics == */
+// Draw texture to screen
+
+/* == Sound == */
