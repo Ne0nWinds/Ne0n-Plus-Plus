@@ -59,6 +59,20 @@ MATHCALL u64 u64_popcnt(u32 a) {
 	u64 Result = _mm_popcnt_u64(a);
 	return Result;
 }
+MATHCALL u32 u32_roundup_pw2(u32 a, u32 pw2) {
+	Assert(u32_popcnt(pw2) == 1);
+	u32 n = pw2 - 1;
+	a += n;
+	a &= ~n;
+	return a;
+}
+MATHCALL u64 u64_roundup_pw2(u64 a, u64 pw2) {
+	Assert(u64_popcnt(pw2) == 1);
+	u64 n = pw2 - 1;
+	a += n;
+	a &= ~n;
+	return a;
+}
 
 MATHCALL f32 f32_round(f32 a) {
 	xmm xmm0 = a;

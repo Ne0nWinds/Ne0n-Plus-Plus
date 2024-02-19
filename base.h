@@ -161,6 +161,9 @@ MATHCALL u64 u64_max(u64 a, u64 b);
 MATHCALL s32 s32_max(s32 a, s32 b);
 MATHCALL s64 s64_max(s64 a, s64 b);
 
+MATHCALL u32 u32_roundup_pw2(u32 a, u32 pw2);
+MATHCALL u64 u64_roundup_pw2(u64 a, u64 pw2);
+
 MATHCALL u32 u32_popcnt(u32 a);
 MATHCALL u64 u64_popcnt(u32 a);
 
@@ -336,25 +339,25 @@ MATHCALL u32 u32_random_xorshift(random_state128 *random_state);
 #define RANDOM_ALGORITHM_LCG 2
 #define RANDOM_ALGORITHM_XORSHIFT 3
 
-#define RANDOM_ALGORITHM RANDOM_ALGORITHM_PCG
+#ifndef RANDOM_ALGORITHM
+	#define RANDOM_ALGORITHM RANDOM_ALGORITHM_PCG
+#endif
 
 #if RANDOM_ALGORITHM == RANDOM_ALGORITHM_PCG
-#define u32_random u32_random_pcg
+	#define u32_random u32_random_pcg
 #elif RANDOM_ALGORITHM == RANDOM_ALGORITHM_PCG
-#define u32_random u32_random_lcg
+	#define u32_random u32_random_lcg
 #elif
-#define u32_random u32_random_xorshift
+	#define u32_random u32_random_xorshift
 #endif
 
 /* == Error Handling == */
 
-struct Error { };
+struct err { };
 void ErrorAccumulationBegin();
 void ErrorAccumulationEnd();
 
 /* == Profiling / Timing == */
-
-void TimerInit();
 u64 TimerSample();
 
 /* == Memory == */
@@ -364,23 +367,61 @@ u64 TimerSample();
 #define GB(b) (MB(b) * 1024LLU)
 #define TB(b) (GB(b) * 1024LLU)
 
+void ZeroMemory(void *Ptr, u64 Size);
+
 struct memory_arena {
 	void *Start;
-	u32 Offset;
+	void *Offset;
 	u32 Size;
 };
 
-void ArenaInit(memory_arena *Arena, u32 ReserveSize, u32 CommitSize = 0);
-void *Push(memory_arena *Arena, u32 Size, u32 Count);
-void Pop(memory_arena *Arena, void *Ptr);
+// Reserve and commit all memory up front
+void ArenaInitCommitAndReserve(memory_arena *Arena, u64 Size, u64 StartingAddress);
+void *PushFast(memory_arena *Arena, u64 Size, u64 Count);
+void *PushFastAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
+void PopFast(memory_arena *Arena, void *Ptr);
+
+// Reserve large amount of memory and commit only as necessary
+void ArenaReserve(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, u64 StartingAddress);
+void *PushAndCommit(memory_arena *Arena, u64 Size, u64 Count);
+void *PushAndCommitAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
+void PopAndDecommit(memory_arena *Arena, void *Ptr);
+
+// Use a linked list of virtual memory pages
+void ArenaInitChained(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, u64 StartingAddress);
+void *PushChained(memory_arena *Arena, u64 Size, u64 Count);
+void *PushChainedAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
+void PopChained(memory_arena *Arena, void *Ptr);
+
+#define DEFAULT_MEM_ALLOC_STRATEGY_FAST 1
+#define DEFAULT_MEM_ALLOC_STRATEGY_COMMIT_AS_NEEDED 2
+#define DEFAULT_MEM_ALLOC_STRATEGY_CHAINED 3
+
+#ifndef DEFAULT_MEM_ALLOC_STRATEGY
+	#define DEFAULT_MEM_ALLOC_STRATEGY DEFAULT_MEM_ALLOC_STRATEGY_FAST
+#endif
+
+#if RANDOM_ALGORITHM == DEFAULT_MEM_ALLOC_STRATEGY_FAST
+	#define Push PushFast
+	#define Pop PopFast
+#elif RANDOM_ALGORITHM == DEFAULT_MEM_ALLOC_STRATEGY_COMMIT_AS_NEEDED
+	#define Push PushAndCommit
+	#define Pop PopAndDecommit
+#elif
+	#define Push PushChained
+	#define Pop PopChained
+#endif
 
 struct DeferredPop {
-	memory_arena *_Arena;
-	void *_Ptr;
-	DeferredPop(memory_arena *Arena, void *Ptr) : _Arena(Arena), _Ptr(Ptr) { };
+	memory_arena *Arena;
+	void *Ptr;
+	DeferredPop(memory_arena *Arena, void *Ptr) {
+		this->Arena = Arena;
+		this->Ptr = Ptr;
+	}
 
 	force_inline ~DeferredPop() {
-		Pop(_Arena, _Ptr);
+		Pop(Arena, Ptr);
 	}
 };
 
@@ -389,8 +430,29 @@ struct DeferredPop {
 /* == Strings == */
 typedef u8 char8;
 struct string8 {
-	char8 Data;
+	char8 *Data;
 	u32 Length;
+
+	constexpr string8(char8 *Str) : Data(0), Length(0) {
+		this->Data = (char8 *)Str;
+		u32 Length = 0;
+		while (*Str) {
+			char8 C = *Str;
+
+#if 0
+			u32 CodepointLength = 1 + ((C & 0xE0) == 0xC0) + ((C & 0xF0) == 0xD) + ((C & 0xF8) == 0xF0);
+			Str += CodepointLength;
+#else
+			Str += 1;
+#endif
+			Length += 1;
+		}
+		this->Length = Length;
+	}
+	constexpr string8(char8 *Str, u32 Length) : Data(0), Length(0) {
+		this->Length = Length;
+		this->Data = (char8 *)Str;
+	}
 };
 
 constexpr u64 StringHash(const string8 &String);
@@ -405,9 +467,9 @@ constexpr u64 StringHash(const string8 &String);
 /* == Assets == */
 
 /* == Windowing / Input == */
-void CreateWindow();
+void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Height);
+void ResizeWindow(u32 Width, u32 Height);
 bool ShouldWindowClose();
-void ProcessInputEvents();
 
 /* == Ray tracing == */
 
