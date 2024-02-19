@@ -429,6 +429,7 @@ struct DeferredPop {
 
 /* == Strings == */
 typedef u8 char8;
+
 struct string8 {
 	char8 *Data;
 	u32 Length;
@@ -455,6 +456,8 @@ struct string8 {
 	}
 };
 
+static inline wchar_t *ConvertUTF8toUTF16(memory_arena *Arena, const string8 &String);
+
 constexpr u64 StringHash(const string8 &String);
 
 
@@ -470,6 +473,7 @@ constexpr u64 StringHash(const string8 &String);
 void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Height);
 void ResizeWindow(u32 Width, u32 Height);
 bool ShouldWindowClose();
+s32 AppMain(void);
 
 /* == Ray tracing == */
 
@@ -485,3 +489,4 @@ struct SoundHandle {
 void InitSoundEngine();
 SoundHandle PlaySound(u64 Hash);
 void StopSound(SoundHandle Handle);
+

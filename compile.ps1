@@ -1,0 +1,2 @@
+cl.exe -Zi -DPLATFORM_X64 -nologo /utf-8 /GS- /Gs9999999 /arch:AVX2 .\main.cpp .\win32_base.cpp -o .\build\ /link /NODEFAULTLIB user32.lib xinput.lib kernel32.lib /ENTRY:_AppMain /SUBSYSTEM:WINDOWS /STACK:0x100000,0x100000
+clang -g -nostdlib -DPLATFORM_X64 -DPLATFORM_WIN32 -DSIMD_WIDTH=8 -D_DEBUG -mfma -mavx2 .\main.cpp .\win32_base.cpp .\win32_base.c -lUser32 -lXinput -lkernel32 -DPLATFORM_X64 -mavx2 -o .\build\a.exe "-Wl,/ENTRY:_AppMain,/SUBSYSTEM:WINDOWS,/opt:ref,/STACK:0x100000"

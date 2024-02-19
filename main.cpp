@@ -1,7 +1,6 @@
 #include "base.h"
 
-int main(void) {
-
+s32 AppMain(void) {
 	memory_arena Arena = {0};
 	ArenaInitCommitAndReserve(&Arena, MB(256), TB(8));
 

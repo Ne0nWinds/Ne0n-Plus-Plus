@@ -59,10 +59,10 @@ void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Heig
 
 	wchar_t *WindowTitle = 0;
 	{
-		s32 Length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, (const char *)Title.Data, Title.Length, 0, 0);
+		s32 Length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS | MB_PRECOMPOSED, (const char *)Title.Data, Title.Length, 0, 0);
 		Assert(Length);
 		WindowTitle = (wchar_t *)Push(Arena, Length, sizeof(wchar_t));
-		s32 Result = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS, (const char *)Title.Data, Title.Length, WindowTitle, Length * sizeof(wchar_t));
+		s32 Result = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS | MB_PRECOMPOSED, (const char *)Title.Data, Title.Length, WindowTitle, Length * sizeof(wchar_t));
 		Assert(Result);
 	}
 
@@ -145,4 +145,13 @@ LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM l
 	}
 
 	return DefWindowProcW(WindowHandle, Msg, wParam, lParam);
+}
+
+#ifdef COMPILER_MSVC
+extern "C" int _fltused{0x9875};
+#endif
+
+void _AppMain() {
+	s32 Result = AppMain();
+	ExitProcess(Result);
 }
