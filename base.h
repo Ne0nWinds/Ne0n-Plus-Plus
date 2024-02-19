@@ -428,17 +428,17 @@ struct DeferredPop {
 // struct chained_arena
 
 /* == Strings == */
-typedef u8 char8;
+typedef char char8;
 
 struct string8 {
 	char8 *Data;
 	u32 Length;
 
-	constexpr string8(char8 *Str) : Data(0), Length(0) {
-		this->Data = (char8 *)Str;
+	constexpr string8(const char8 *Str) : Data(const_cast<char8 *>(Str)), Length(0) {
 		u32 Length = 0;
+		char8 *S = const_cast<char8 *>(Str);
 		while (*Str) {
-			char8 C = *Str;
+			char8 C = *S;
 
 #if 0
 			u32 CodepointLength = 1 + ((C & 0xE0) == 0xC0) + ((C & 0xF0) == 0xD) + ((C & 0xF8) == 0xF0);
@@ -450,10 +450,7 @@ struct string8 {
 		}
 		this->Length = Length;
 	}
-	constexpr string8(char8 *Str, u32 Length) : Data(0), Length(0) {
-		this->Length = Length;
-		this->Data = (char8 *)Str;
-	}
+	constexpr string8(const char8 *Str, u32 Length) : Data(const_cast<char8 *>(Str)), Length(Length) { }
 };
 
 static inline wchar_t *ConvertUTF8toUTF16(memory_arena *Arena, const string8 &String);
