@@ -457,7 +457,6 @@ static inline wchar_t *ConvertUTF8toUTF16(memory_arena *Arena, const string8 &St
 
 constexpr u64 StringHash(const string8 &String);
 
-
 /* == File / IO == */
 
 /* == Threading == */
@@ -471,6 +470,123 @@ void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Heig
 void ResizeWindow(u32 Width, u32 Height);
 bool ShouldWindowClose();
 s32 AppMain(void);
+
+// Canonical positions on ANSI keyboard
+enum class key : u32 {
+	Escape,
+	F1,
+	F2,
+	F3,
+	F4,
+	F5,
+	F6,
+	F7,
+	F8,
+	F9,
+	F10,
+	F11,
+	F12,
+	Delete,
+	Tilde,
+	One,
+	Two,
+	Three,
+	Four,
+	Five,
+	Six,
+	Seven,
+	Eight,
+	Nine,
+	Minus,
+	Equals,
+	Backspace,
+	Tab,
+	Q,
+	W,
+	E,
+	R,
+	T,
+	Y,
+	U,
+	I,
+	O,
+	P,
+	BracketLeft,
+	BracketRight,
+	Backslash,
+	CapsLock,
+	A,
+	S,
+	D,
+	F,
+	G,
+	H,
+	J,
+	K,
+	L,
+	Semicolon,
+	Quote,
+	Enter,
+	LeftShift,
+	Z,
+	X,
+	C,
+	V,
+	B,
+	N,
+	M,
+	Comma,
+	Period,
+	ForwardSlash,
+	RightShift,
+	LeftControl,
+	Command,
+	LeftAlt,
+	Space,
+	RightAlt,
+	RightControl,
+	LeftArrow,
+	UpArrow,
+	RightArrow,
+	DownArrow,
+	
+	MouseLeft,
+	MouseRight,
+	MouseMiddle,
+	MouseX1,
+	MouseX2,
+	Count
+};
+bool IsKeyDown(key Key);
+bool IsKeyUp(key Key);
+bool WasKeyReleased(key Key);
+bool WasKeyPressed(key Key);
+
+enum class button : u32 {
+	DPadUp         = 0,
+	DPadDown       = 1,
+	DPadLeft       = 2,
+	DPadRight      = 3,
+	Start          = 4,
+	Back           = 5,
+	LeftThumb      = 6,
+	RightThumb     = 7,
+	LeftShoulder   = 8,
+	RightShoulder  = 9,
+	A              = 10,
+	B              = 11,
+	X              = 12,
+	Y              = 13,
+	Count
+};
+
+bool IsButtonDown(button Button);
+bool IsButtonUp(button Button);
+bool WasButtonReleased(button Button);
+bool WasButtonPressed(button Button);
+
+v2 GetMouseMovement();
+v2 GetAnalogInput();
 
 /* == Ray tracing == */
 

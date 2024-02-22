@@ -7,8 +7,13 @@ s32 AppMain(void) {
 	constexpr string8 WindowTitle = u8"¿Qué?";
 	CreateWindow(&Arena, WindowTitle, 1280, 720);
 
-	while (!ShouldWindowClose()) {
+	u32 count = (u32)key::Count;
 
+	while (!ShouldWindowClose()) {
+		bool button = WasButtonPressed(button::A);
+		if (button) {
+			Break();
+		}
 	}
 
 	return 0;
