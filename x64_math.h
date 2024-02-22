@@ -287,3 +287,34 @@ MATHCALL v4 v4_lerp(const v4 &a, const v4 &b, f32 t) {
 	v4 Result = (1.0f - t) * a + t * b;
 	return Result;
 }
+
+MATHCALL bool IsZeroed(const u32x2 &a) {
+	const xmm xmm0 = xmm(a);
+	s32 Result = _mm_testz_si128(xmm0, xmm0);
+	return Result != 0;
+}
+MATHCALL bool IsZeroed(const u32x3 &a) {
+	const xmm xmm0 = xmm(a);
+	s32 Result = _mm_testz_si128(xmm0, xmm0);
+	return Result != 0;
+}
+MATHCALL bool IsZeroed(const u32x4 &a) {
+	const xmm xmm0 = xmm(a);
+	s32 Result = _mm_testz_si128(xmm0, xmm0);
+	return Result != 0;
+}
+#if SIMD_WIDTH == 4
+MATHCALL bool IsZeroed(const u32x8 &a) {
+	const xmm xmm0 = xmm(a.U32x4[0]);
+	const xmm xmm1 = xmm(a.U32x4[1]);
+	bool Result1 = _mm_testz_si128(xmm0, xmm0) != 0;
+	bool Result2 = _mm_testz_si128(xmm1, xmm1) != 0;
+	return Result1 & Result2;
+}
+#elif SIMD_WIDTH == 8
+MATHCALL bool IsZeroed(const u32x8 &a) {
+	const ymm ymm0 = ymm(a);
+	s32 Result = _mm256_testz_si256(ymm0, ymm0);
+	return Result != 0;
+}
+#endif

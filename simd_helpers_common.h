@@ -22,12 +22,6 @@ struct v4x {
 	force_inline constexpr v4x(v4 a) : x(a.x), y(a.y), z(a.z), w(a.w) { }
 };
 
-struct u128 {
-	u64 Value[2];
-
-	force_inline constexpr u128() : Value { 0, 0 } { }
-};
-
 MATHCALL f32x operator+(const f32x &a, const f32x &b) {
 	f32x Result;
 	Result.Value = a.Value + b.Value;

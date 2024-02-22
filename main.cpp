@@ -2,19 +2,20 @@
 
 s32 AppMain(void) {
 	memory_arena Arena = {0};
-	ArenaInitCommitAndReserve(&Arena, MB(256), TB(8));
+	ArenaInit(&Arena, MB(256), TB(8));
 
 	constexpr string8 WindowTitle = u8"¿Qué?";
 	CreateWindow(&Arena, WindowTitle, 1280, 720);
 
 	u32 count = (u32)key::Count;
 
+	bool x = 0;
 	while (!ShouldWindowClose()) {
 		bool button = WasButtonPressed(button::A);
 		if (button) {
-			Break();
+			x = 1;
 		}
 	}
 
-	return 0;
+	return x;
 }

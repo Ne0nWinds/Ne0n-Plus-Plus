@@ -206,11 +206,17 @@ MATHCALL v2 v2_lerp(const v2 &a, const v2 &b, f32 t);
 MATHCALL v3 v3_lerp(const v3 &a, const v3 &b, f32 t);
 MATHCALL v4 v4_lerp(const v4 &a, const v4 &b, f32 t);
 
+MATHCALL bool IsZeroed(const u32x2 &a);
+MATHCALL bool IsZeroed(const u32x3 &a);
+MATHCALL bool IsZeroed(const u32x4 &a);
+
 #if defined(PLATFORM_X64)
 	#include "x64_math.h"
 #else
 	#include "math.h"
 #endif
+
+/* Large Numbers */
 
 /* == SIMD Helpers == */
 
@@ -219,8 +225,6 @@ struct f32x;
 struct v2x;
 struct v3x;
 struct v4x;
-struct u128;
-struct u256;
 
 MATHCALL f32x operator+(const f32x &a, const f32x &b);
 MATHCALL v2x operator+(const v2x &a, const v2x &b);
@@ -306,7 +310,9 @@ MATHCALL v3x operator>>(const v3x &a, const u32x &b);
 MATHCALL v4x operator>>(const v4x &a, const u32x &b);
 MATHCALL u32x operator>>(const u32x &a, const u32x &b);
 
-#if SIMD_WIDTH == 4
+#if SIMD_WIDTH == 1
+	#include "simd_helpers_scalar.h"
+#elif SIMD_WIDTH == 4
 	#include "simd_helpers_4x.h"
 #elif SIMD_WIDTH == 8
 	#include "simd_helpers_8x.h"
@@ -315,6 +321,30 @@ MATHCALL u32x operator>>(const u32x &a, const u32x &b);
 #endif
 
 #include "simd_helpers_common.h"
+
+struct u128;
+struct u256;
+
+MATHCALL u128 operator&(const u128 &a, const u128 &b);
+MATHCALL u128 operator^(const u128 &a, const u128 &b);
+MATHCALL u128 operator|(const u128 &a, const u128 &b);
+MATHCALL u128 operator~(u128 a);
+MATHCALL u128 operator<<(const u128 &a, const u32 b);
+MATHCALL u128 operator>>(const u128 &a, const u32 b);
+
+MATHCALL u256 operator&(const u256 &a, const u256 &b);
+MATHCALL u256 operator^(const u256 &a, const u256 &b);
+MATHCALL u256 operator|(const u256 &a, const u256 &b);
+MATHCALL u256 operator~(u256 a);
+MATHCALL u256 operator<<(const u256 &a, const u32 b);
+MATHCALL u256 operator>>(const u256 &a, const u32 b);
+
+#if defined(PLATFORM_X64)
+	#include "x64_wide_math.h"
+#else
+	#include "wide_math.h"
+#endif
+
 
 /* == Psuedo Randomness == */
 struct random_state64 {
@@ -376,54 +406,36 @@ struct memory_arena {
 };
 
 // Reserve and commit all memory up front
-void ArenaInitCommitAndReserve(memory_arena *Arena, u64 Size, u64 StartingAddress);
-void *PushFast(memory_arena *Arena, u64 Size, u64 Count);
-void *PushFastAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
-void PopFast(memory_arena *Arena, void *Ptr);
+void ArenaInit(memory_arena *Arena, u64 Size, u64 StartingAddress);
+void *Push(memory_arena *Arena, u64 Size, u64 Count);
+void *PushAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
+void Pop(memory_arena *Arena, void *Ptr);
 
 // Reserve large amount of memory and commit only as necessary
-void ArenaReserve(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, u64 StartingAddress);
-void *PushAndCommit(memory_arena *Arena, u64 Size, u64 Count);
-void *PushAndCommitAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
-void PopAndDecommit(memory_arena *Arena, void *Ptr);
+// void ArenaReserve(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, u64 StartingAddress);
+// void *PushAndCommit(memory_arena *Arena, u64 Size, u64 Count);
+// void *PushAndCommitAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
+// void PopAndDecommit(memory_arena *Arena, void *Ptr);
 
 // Use a linked list of virtual memory pages
-void ArenaInitChained(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, u64 StartingAddress);
-void *PushChained(memory_arena *Arena, u64 Size, u64 Count);
-void *PushChainedAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
-void PopChained(memory_arena *Arena, void *Ptr);
+// void ArenaInitChained(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, u64 StartingAddress);
+// void *PushChained(memory_arena *Arena, u64 Size, u64 Count);
+// void *PushChainedAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
+// void PopChained(memory_arena *Arena, void *Ptr);
 
-#define DEFAULT_MEM_ALLOC_STRATEGY_FAST 1
-#define DEFAULT_MEM_ALLOC_STRATEGY_COMMIT_AS_NEEDED 2
-#define DEFAULT_MEM_ALLOC_STRATEGY_CHAINED 3
-
-#ifndef DEFAULT_MEM_ALLOC_STRATEGY
-	#define DEFAULT_MEM_ALLOC_STRATEGY DEFAULT_MEM_ALLOC_STRATEGY_FAST
-#endif
-
-#if RANDOM_ALGORITHM == DEFAULT_MEM_ALLOC_STRATEGY_FAST
-	#define Push PushFast
-	#define Pop PopFast
-#elif RANDOM_ALGORITHM == DEFAULT_MEM_ALLOC_STRATEGY_COMMIT_AS_NEEDED
-	#define Push PushAndCommit
-	#define Pop PopAndDecommit
-#elif
-	#define Push PushChained
-	#define Pop PopChained
-#endif
-
-struct DeferredPop {
+struct DeferredPop_ {
 	memory_arena *Arena;
 	void *Ptr;
-	DeferredPop(memory_arena *Arena, void *Ptr) {
+	inline DeferredPop_(memory_arena *Arena) {
 		this->Arena = Arena;
-		this->Ptr = Ptr;
+		this->Ptr = Arena->Offset;
 	}
 
-	force_inline ~DeferredPop() {
+	inline ~DeferredPop_() {
 		Pop(Arena, Ptr);
 	}
 };
+#define DeferredPop(Arena) DeferredPop_ dp_ = DeferredPop_(Arena);
 
 // struct chained_arena
 
@@ -473,90 +485,126 @@ s32 AppMain(void);
 
 // Canonical positions on ANSI keyboard
 enum class key : u32 {
-	Escape,
-	F1,
-	F2,
-	F3,
-	F4,
-	F5,
-	F6,
-	F7,
-	F8,
-	F9,
-	F10,
-	F11,
-	F12,
-	Delete,
-	Tilde,
-	One,
-	Two,
-	Three,
-	Four,
-	Five,
-	Six,
-	Seven,
-	Eight,
-	Nine,
-	Minus,
-	Equals,
-	Backspace,
-	Tab,
-	Q,
-	W,
-	E,
-	R,
-	T,
-	Y,
-	U,
-	I,
-	O,
-	P,
-	BracketLeft,
-	BracketRight,
-	Backslash,
-	CapsLock,
-	A,
-	S,
-	D,
-	F,
-	G,
-	H,
-	J,
-	K,
-	L,
-	Semicolon,
-	Quote,
-	Enter,
-	LeftShift,
-	Z,
-	X,
-	C,
-	V,
-	B,
-	N,
-	M,
-	Comma,
-	Period,
-	ForwardSlash,
-	RightShift,
-	LeftControl,
-	Command,
-	LeftAlt,
-	Space,
-	RightAlt,
-	RightControl,
-	LeftArrow,
-	UpArrow,
-	RightArrow,
-	DownArrow,
-	
-	MouseLeft,
-	MouseRight,
-	MouseMiddle,
-	MouseX1,
-	MouseX2,
-	Count
+    Escape,
+    One,
+    Two,
+    Three,
+    Four,
+    Five,
+    Six,
+    Seven,
+    Eight,
+    Nine,
+    Zero,
+    Minus,
+    Equals,
+    Backspace,
+    Tab,
+    Q,
+    W,
+    E,
+    R,
+    T,
+    Y,
+    U,
+    I,
+    O,
+    P,
+    BracketLeft,
+    BracketRight,
+    Enter,
+    ControlLeft,
+    A,
+    S,
+    D,
+    F,
+    G,
+    H,
+    J,
+    K,
+    L,
+    Semicolon,
+    Apostrophe,
+    Grave,
+    ShiftLeft,
+    Backslash,
+    Z,
+    X,
+    C,
+    V,
+    B,
+    N,
+    M,
+    Comma,
+    Period,
+    Slash,
+    ShiftRight,
+    NumpadMultiply,
+    AltLeft,
+    Space,
+    CapsLock,
+    F1,
+    F2,
+    F3,
+    F4,
+    F5,
+    F6,
+    F7,
+    F8,
+    F9,
+    F10,
+    NumLock,
+    ScrollLock,
+    Numpad7,
+    Numpad8,
+    Numpad9,
+    NumpadMinus,
+    Numpad4,
+    Numpad5,
+    Numpad6,
+    NumpadPlus,
+    Numpad1,
+    Numpad2,
+    Numpad3,
+    Numpad0,
+    NumpadPeriod,
+    AltPrintScreen,
+    AngleBracket,
+    F11,
+    F12,
+    F13,
+    F14,
+    F15,
+    F16,
+    F17,
+    F18,
+    F19,
+    F20,
+    F21,
+    F22,
+    F23,
+    NumpadEnter,
+    ControlRight,
+    VolumeDown,
+    VolumeUp,
+    NumpadDivide,
+    PrintScreen,
+    AltRight,
+    Home,
+    ArrowUp,
+    PageUp,
+    ArrowLeft,
+    ArrowRight,
+    End,
+    ArrowDown,
+    PageDown,
+    Insert,
+    Delete,
+    MetaLeft,
+    MetaRight,
+    Count
 };
+
 bool IsKeyDown(key Key);
 bool IsKeyUp(key Key);
 bool WasKeyReleased(key Key);
@@ -579,7 +627,6 @@ enum class button : u32 {
 	Y              = 13,
 	Count
 };
-
 bool IsButtonDown(button Button);
 bool IsButtonUp(button Button);
 bool WasButtonReleased(button Button);
@@ -602,4 +649,3 @@ struct SoundHandle {
 void InitSoundEngine();
 SoundHandle PlaySound(u64 Hash);
 void StopSound(SoundHandle Handle);
-
