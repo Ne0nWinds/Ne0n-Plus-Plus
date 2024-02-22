@@ -485,7 +485,7 @@ s32 AppMain(void);
 
 // Canonical positions on ANSI keyboard
 enum class key : u32 {
-    Escape,
+    Escape = 0x1,
     One,
     Two,
     Three,
