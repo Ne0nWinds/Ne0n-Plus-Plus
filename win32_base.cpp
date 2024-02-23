@@ -50,7 +50,7 @@ void PopChained(memory_arena *Arena, void *Ptr);
 
 // Based on ANSI layout
 enum class scan_code : u32 {
-    Escape = 0x01,
+    Escape = 0x1,
 	One = 0x2,
 	Two = 0x3,
 	Three = 0x4,
@@ -78,7 +78,7 @@ enum class scan_code : u32 {
 	LeftBracket = 0x1A,
 	RightBracket = 0x1B,
 	Enter = 0x1C,
-	CapsLock = 0x3A,
+	LeftControl = 0x1D,
 	A = 0x1E,
 	S = 0x1F,
 	D = 0x20,
@@ -90,11 +90,11 @@ enum class scan_code : u32 {
 	L = 0x26,
 	Semicolon = 0x27,
 	Quote = 0x28,
-	Pipe = 0x2B,
+	GraveAccent = 0x29,
 	LeftShift = 0x2A,
-	OEM10 = 0x56,
+	Pipe = 0x2B,
 	Z = 0x2C,
-	X = 0x2E,
+	X = 0x2D,
 	C = 0x2E,
 	V = 0x2F,
 	B = 0x30,
@@ -104,10 +104,41 @@ enum class scan_code : u32 {
 	Period = 0x34,
 	QuestionMark = 0x35,
 	RightShift = 0x36,
-	LeftControl = 0x1D,
-	LeftWindows = 0xE05B,
+	NumpadMultiply = 0x37,
 	LeftAlt = 0x38,
 	Space = 0x39,
+	CapsLock = 0x3A,
+	F1 = 0x3B,
+	F2 = 0x3C,
+	F3 = 0x3D,
+	F4 = 0x3E,
+	F5 = 0x3F,
+	F6 = 0x40,
+	F7 = 0x41,
+	F8 = 0x42,
+	F9 = 0x43,
+	F10 = 0x44,
+	Pause = 0x45,
+	ScrollLock = 0x46,
+	Numpad7 = 0x47,
+	Numpad8 = 0x48,
+	Numpad9 = 0x49,
+	NumpadMinus = 0x4A,
+	Numpad4 = 0x4B,
+	Numpad5 = 0x4C,
+	Numpad6 = 0x4D,
+	NumpadPlus = 0x4E,
+	Numpad1 = 0x4F,
+	Numpad2 = 0x50,
+	Numpad3 = 0x51,
+	Numpad0 = 0x52,
+	NumpadPeriod = 0x53,
+	AltPrintScreen = 0x54,
+	_Unused = 0x55,
+	OEM10 = 0x56,
+	F11 = 0x57,
+	F12 = 0x58,
+	LeftWindows = 0xE05B,
 	RightAlt = 0xE038,
 	RightWindows = 0xE05C,
 	Menu = 0xE05D,
@@ -124,102 +155,75 @@ enum class scan_code : u32 {
 	ArrowRight = 0xE04D,
 	NumLock = 0x45,
 	NumpadForwardSlash = 0xE035,
-	NumpadMultiply = 0x37,
-	NumpadMinus = 0x4A,
-	NumpadPlus = 0x4E,
 	NumpadEnter = 0xE01C,
-	Numpad1 = 0x4F,
-	Numpad2 = 0x50,
-	Numpad3 = 0x51,
-	Numpad4 = 0x4B,
-	Numpad5 = 0x4C,
-	Numpad6 = 0x4D,
-	Numpad7 = 0x47,
-	Numpad8 = 0x48,
-	Numpad9 = 0x48,
-
-	F1 = 0x3B,
-	F2 = 0x3C,
-	F3 = 0x3D,
-	F4 = 0x3E,
-	F5 = 0x3F,
-	F6 = 0x40,
-	F7 = 0x41,
-	F8 = 0x42,
-	F9 = 0x43,
-	F10 = 0x44,
-	F11 = 0x57,
-	F12 = 0x58,
 };
 
 inline key KeyFromScanCode(scan_code ScanCode) {
 	u32 Value = 0;
 
-	/*
-	switch (ScanCode) {
-		case scan_code::NumpadEnter: {
-			Value = (u32)key::NumpadEnter;
-		} break;
-		case scan_code::ControlRight: {
-			Value = (u32)key::ControlRight;
-		} break;
-		case scan_code::VolumeDown: {
-			Value = (u32)key::VolumeDown;
-		} break;
-		case scan_code::VolumeUp: {
-			Value = (u32)key::VolumeUp;
-		} break;
-		case scan_code::NumpadDivide: {
-			Value = (u32)key::NumpadDivide;
-		} break;
-		case scan_code::PrintScreen: {
-			Value = (u32)key::PrintScreen;
-		} break;
-		case scan_code::AltRight: {
-			Value = (u32)key::AltRight;
-		} break;
-		case scan_code::Home: {
-			Value = (u32)key::Home;
-		} break;
-		case scan_code::ArrowUp: {
-			Value = (u32)key::ArrowUp;
-		} break;
-		case scan_code::PageUp: {
-			Value = (u32)key::PageUp;
-		} break;
-		case scan_code::ArrowLeft: {
-			Value = (u32)key::ArrowLeft;
-		} break;
-		case scan_code::ArrowRight: {
-			Value = (u32)key::ArrowRight;
-		} break;
-		case scan_code::End: {
-			Value = (u32)key::End;
-		} break;
-		case scan_code::ArrowDown: {
-			Value = (u32)key::ArrowDown;
-		} break;
-		case scan_code::PageDown: {
-			Value = (u32)key::PageDown;
-		} break;
-		case scan_code::Insert: {
-			Value = (u32)key::Insert;
-		} break;
-		case scan_code::Delete: {
-			Value = (u32)key::Delete;
-		} break;
-		case scan_code::MetaLeft: {
-			Value = (u32)key::MetaLeft;
-		} break;
-		case scan_code::MetaRight: {
-			Value = (u32)key::MetaRight;
-		} break;
-		default: {
-			Value = (u32)ScanCode;
+	if ((u32)ScanCode <= 0x58) {
+		Value = (u32)ScanCode;
+	}
+
+	if ((u32)ScanCode & 0xE000) {
+		switch (ScanCode) {
+			case scan_code::LeftWindows: {
+				Value = (u32)key::LeftWindows;
+			} break;
+			case scan_code::RightAlt: {
+				Value = (u32)key::RightAlt;
+			} break;
+			case scan_code::RightWindows: {
+				Value = (u32)key::RightWindows;
+			} break;
+			case scan_code::Menu: {
+				Value = (u32)key::Menu;
+			} break;
+			case scan_code::RightControl: {
+				Value = (u32)key::RightControl;
+			} break;
+			case scan_code::Insert: {
+				Value = (u32)key::Insert;
+			} break;
+			case scan_code::Home: {
+				Value = (u32)key::Home;
+			} break;
+			case scan_code::PageUp: {
+				Value = (u32)key::PageUp;
+			} break;
+			case scan_code::Delete: {
+				Value = (u32)key::Delete;
+			} break;
+			case scan_code::End: {
+				Value = (u32)key::End;
+			} break;
+			case scan_code::PageDown: {
+				Value = (u32)key::PageDown;
+			} break;
+			case scan_code::ArrowUp: {
+				Value = (u32)key::ArrowUp;
+			} break;
+			case scan_code::ArrowLeft: {
+				Value = (u32)key::ArrowLeft;
+			} break;
+			case scan_code::ArrowDown: {
+				Value = (u32)key::ArrowDown;
+			} break;
+			case scan_code::ArrowRight: {
+				Value = (u32)key::ArrowRight;
+			} break;
+			case scan_code::NumLock: {
+				Value = (u32)key::NumLock;
+			} break;
+			case scan_code::NumpadForwardSlash: {
+				Value = (u32)key::NumpadForwardSlash;
+			} break;
+			case scan_code::NumpadEnter: {
+				Value = (u32)key::NumpadEnter;
+			} break;
 		}
 	}
 
-	*/
 	return (key)Value;
 }
 
@@ -306,6 +310,27 @@ bool WasButtonPressed(button Button) {
 	return CurrentlyDown & PreviouslyUp;
 }
 
+bool IsKeyDown(key Key) {
+	u128 BitPosition = SetBit(0, (u32)Key);
+	return KeyboardState & BitPosition;
+}
+bool IsKeyUp(key Key) {
+	u128 BitPosition = SetBit(0, (u32)Key);
+	return !(KeyboardState & BitPosition);
+}
+bool WasKeyReleased(key Key) {
+	u128 BitPosition = SetBit(0, (u32)Key);
+	bool CurrentlyUp = !(KeyboardState & BitPosition);
+	bool PreviouslyDown = (PrevKeyboardState & BitPosition);
+	return CurrentlyUp & PreviouslyDown;
+}
+bool WasKeyPressed(key Key) {
+	u128 BitPosition = SetBit(0, (u32)Key);
+	bool CurrentlyDown = KeyboardState & BitPosition;
+	bool PreviouslyUp = !(PrevKeyboardState & BitPosition);
+	return CurrentlyDown & PreviouslyUp;
+}
+
 #undef CreateWindow
 void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Height) {
 
@@ -374,8 +399,20 @@ void ResizeWindow(u32 Width, u32 Height) {
 }
 bool ShouldWindowClose() {
 	MSG msg;
+
+	PrevControllerState = ControllerState;
+	PrevKeyboardState = KeyboardState;
+
 	while (PeekMessageA(&msg, WindowHandle, 0, 0, PM_REMOVE)) {
 		DispatchMessageA(&msg);
+	}
+
+	HWND ActiveWindow = GetActiveWindow();
+	if (ActiveWindow != WindowHandle) {
+		PrevControllerState = 0;
+		ControllerState = 0;
+		PrevKeyboardState = 0;
+		KeyboardState = 0;
 	}
 
 	XINPUT_STATE XinputState;
@@ -401,7 +438,6 @@ bool ShouldWindowClose() {
 			}
 		}
 
-		PrevControllerState = ControllerState;
 		ControllerState = XinputState.Gamepad.wButtons;
 	}
 
@@ -423,7 +459,6 @@ LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM l
 
 			UINT Result = GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &RawInput, &Size, sizeof(RAWINPUTHEADER));
 			if (!Result) {
-				Break();
 				return 0;
 			}
 
@@ -436,7 +471,12 @@ LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM l
 				bool KeyDown = !(RawInput.data.keyboard.Flags & RI_KEY_BREAK);
 				u32 Count = (u32)key::Count;
 				key Key = KeyFromScanCode(ScanCode);
-				Break();
+
+				if (KeyDown) {
+					KeyboardState = SetBit(KeyboardState, (u32)Key);
+				} else {
+					KeyboardState = ClearBit(KeyboardState, (u32)Key);
+				}
 			}
 
 			return 0;

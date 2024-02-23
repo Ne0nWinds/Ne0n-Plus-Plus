@@ -9,13 +9,12 @@ s32 AppMain(void) {
 
 	u32 count = (u32)key::Count;
 
-	bool x = 0;
 	while (!ShouldWindowClose()) {
-		bool button = WasButtonPressed(button::A);
-		if (button) {
-			x = 1;
+		bool k = WasKeyReleased(key::Space);
+		if (k) {
+			Break();
 		}
 	}
 
-	return x;
+	return 0;
 }
