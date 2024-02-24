@@ -16,6 +16,8 @@ typedef uint64_t u64;
 typedef float f32;
 typedef double f64;
 
+struct string8;
+
 /* == Macros == */
 #if _MSC_VER 
 	#define COMPILER_MSVC
@@ -56,6 +58,8 @@ typedef double f64;
 		#define SIMD_WIDTH 8
 	#endif
 #endif
+
+void DebugOutput(const string8 &String);
 
 /* == Math == */
 
@@ -340,6 +344,33 @@ MATHCALL u128 operator&=(u128 &a, const u128 &b) { return a = a & b; }
 MATHCALL u128 operator^=(u128 &a, const u128 &b) { return a = a ^ b; }
 MATHCALL u128 operator|=(u128 &a, const u128 &b) { return a = a | b; }
 
+MATHCALL u128 SetBit(const u128 &a, u32 Bit) {
+	Assert(Bit < 128);
+	u128 Result = a;
+
+	u32 Index = Bit / 32;
+	u32 BitShift = Bit % 32 - 1;
+	u32 BitToSet = 1 << (BitShift);
+
+	u32 *Values = (u32 *)&Result.Value;
+	Values[Index] |= BitToSet;
+
+	return Result;
+}
+MATHCALL u128 ClearBit(const u128 &a, u32 Bit) {
+	Assert(Bit < 128);
+	u128 Result = a;
+
+	u32 Index = Bit / 32;
+	u32 BitShift = Bit % 32 - 1;
+	u32 BitToClear = 1 << (BitShift);
+
+	u32 *Values = (u32 *)&Result.Value;
+	Values[Index] &= ~BitToClear;
+
+	return Result;
+}
+
 /* == Psuedo Randomness == */
 struct random_state64 {
 	u64 Seed;
@@ -399,11 +430,18 @@ struct memory_arena {
 	u32 Size;
 };
 
+extern memory_arena TempArena;
+
 // Reserve and commit all memory up front
 void ArenaInit(memory_arena *Arena, u64 Size, u64 StartingAddress);
-void *Push(memory_arena *Arena, u64 Size, u64 Count);
-void *PushAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
-void Pop(memory_arena *Arena, void *Ptr);
+void *ArenaPush(memory_arena *Arena, u64 Size);
+void *ArenaPushAligned(memory_arena *Arena, u64 Size, u32 Alignment);
+void ArenaPop(memory_arena *Arena, void *Ptr);
+
+// thread_local temp storage
+void *Push(u64 Size);
+void *PushAligned(u64 Size, u32 Alignment);
+void Pop(void *Ptr);
 
 // Reserve large amount of memory and commit only as necessary
 // void ArenaReserve(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, u64 StartingAddress);
@@ -424,9 +462,13 @@ struct DeferredPop_ {
 		this->Arena = Arena;
 		this->Ptr = Arena->Offset;
 	}
+	inline DeferredPop_() {
+		this->Arena = &TempArena;
+		this->Ptr = TempArena.Offset;
+	}
 
 	inline ~DeferredPop_() {
-		Pop(Arena, Ptr);
+		ArenaPop(Arena, Ptr);
 	}
 };
 #define DeferredPop(Arena) DeferredPop_ dp_ = DeferredPop_(Arena);
@@ -472,9 +514,9 @@ constexpr u64 StringHash(const string8 &String);
 /* == Assets == */
 
 /* == Windowing / Input == */
-void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Height);
+void CreateWindow(const string8 &Title, u32 Width, u32 Height);
 void ResizeWindow(u32 Width, u32 Height);
-bool ShouldWindowClose(memory_arena *Arena);
+bool ShouldWindowClose();
 s32 AppMain(void);
 
 enum class key : u32 {
@@ -616,15 +658,20 @@ bool WasButtonPressed(button Button);
 v2 GetAnalogInput();
 
 enum class mouse_button : u32 {
-	LeftMouseButton,
-	RightMouseButton,
-	MiddleMouseButton,
-	XButton1,
-	XButton2,
+	LeftMouseButton   = 1 << 0,
+	RightMouseButton  = 1 << 1,
+	MiddleMouseButton = 1 << 2,
+	XButton1          = 1 << 3,
+	XButton2          = 1 << 4,
+	Count
 };
 
 v2 GetMouseDelta();
 s32 GetMouseWheelDelta();
+bool IsMouseButtonDown(mouse_button Button);
+bool IsMouseButtonUp(mouse_button Button);
+bool WasMouseButtonReleased(mouse_button Button);
+bool WasMouseButtonPressed(mouse_button Button);
 
 /* == Ray tracing == */
 

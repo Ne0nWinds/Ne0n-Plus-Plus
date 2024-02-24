@@ -5,6 +5,30 @@
 #include <Windows.h>
 #include <Xinput.h>
 
+static inline wchar_t *WideStringFromString8(const string8 &String) {
+	s32 Length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS | MB_PRECOMPOSED, (const char *)String.Data, String.Length + 1, 0, 0);
+	if (Length == 0) {
+		Break();
+		return 0;
+	}
+	wchar_t *Result = (wchar_t *)Push(sizeof(wchar_t));
+	Length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS | MB_PRECOMPOSED, (const char *)String.Data, String.Length + 1, Result, Length * sizeof(wchar_t));
+	if (Length == 0) {
+		Break();
+		Pop(Result);
+		return 0;
+	}
+	return Result;
+	return 0;
+}
+
+
+void DebugOutput(const string8 &String) {
+	wchar_t *WideString = WideStringFromString8(String);
+	OutputDebugStringW(WideString);
+	Pop((void *)WideString);
+}
+
 // Memory
 void ArenaInit(memory_arena *Arena, u64 Size, u64 StartingAddress) {
 	constexpr u32 PageSize = 65536;
@@ -16,35 +40,37 @@ void ArenaInit(memory_arena *Arena, u64 Size, u64 StartingAddress) {
 
 	Assert(Arena->Start != NULL);
 }
-void *Push(memory_arena *Arena, u64 Size, u64 Count) {
-	return PushAligned(Arena, Size, Count, 16);
+void *ArenaPush(memory_arena *Arena, u64 Size) {
+	return ArenaPushAligned(Arena, Size, 16);
 }
-void *PushAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment) {
+void *ArenaPushAligned(memory_arena *Arena, u64 Size, u32 Alignment) {
 	Assert(u32_popcnt(Alignment) == 1);
 
 	u8 *AlignedOffset = (u8 *)Arena->Offset;
 	*(u64 *)&AlignedOffset = u64_roundup_pw2((u64)AlignedOffset, Alignment);
 
-	u8 *NewOffset = AlignedOffset + (Size * Count);
+	u8 *NewOffset = AlignedOffset + Size;
 	Assert((u64)(NewOffset - (u8 *)Arena->Start) < Arena->Size);
 	Arena->Offset = NewOffset;
 
 	return AlignedOffset;
 }
-void Pop(memory_arena *Arena, void *Ptr) {
-	Assert((u64)Ptr >= (u64)Arena->Start && (u64)Ptr < (u64)Arena->Offset);
+void ArenaPop(memory_arena *Arena, void *Ptr) {
+	Assert((u64)Ptr >= (u64)Arena->Start && (u64)Ptr <= (u64)Arena->Offset);
 	Arena->Offset = Ptr;
 }
 
-// Reserve large amount of memory and commit only as necessary
-void ArenaReserve(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, void *StartingAddress);
-void *PushAndCommit(memory_arena *Arena, u64 Size, u64 Count);
-void PopAndDecommit(memory_arena *Arena, void *Ptr);
+memory_arena TempArena;
 
-// Use a linked list of virtual memory pages
-void ArenaInitChained(memory_arena *Arena, u64 ReserveSize, u64 CommitSize, void *StartingAddress);
-void *PushChained(memory_arena *Arena, u64 Size, u64 Count);
-void PopChained(memory_arena *Arena, void *Ptr);
+void *Push(u64 Size) {
+	return ArenaPush(&TempArena, Size);
+}
+void *PushAligned(u64 Size, u32 Alignment) {
+	return ArenaPushAligned(&TempArena, Size, Alignment);
+}
+void Pop(void *Ptr) {
+	ArenaPop(&TempArena, Ptr);
+}
 
 // Windowing
 
@@ -233,6 +259,7 @@ static HWND WindowHandle = NULL;
 static bool ShouldClose = false;
 static LARGE_INTEGER PerformanceFrequency = {0};
 
+// Use transition count?
 static u32 PrevControllerState;
 static u32 ControllerState;
 static u128 PrevKeyboardState;
@@ -331,8 +358,10 @@ bool WasKeyPressed(key Key) {
 	return CurrentlyDown & PreviouslyUp;
 }
 
-v2 MouseDelta;
-s32 MouseWheelDelta;
+static v2 MouseDelta;
+static s32 MouseWheelDelta;
+static u32 PrevMouseButtonState;
+static u32 MouseButtonState;
 
 v2 GetMouseDelta() {
 	return MouseDelta;
@@ -340,22 +369,31 @@ v2 GetMouseDelta() {
 s32 GetMouseWheelDelta() {
 	return MouseWheelDelta;
 }
+bool IsMouseButtonDown(mouse_button Button) {
+	return MouseButtonState & (u32)Button;
+}
+bool IsMouseButtonUp(mouse_button Button) {
+	return !(MouseButtonState & (u32)Button);
+}
+bool WasMouseButtonReleased(mouse_button Button) {
+	bool CurrentlyUp = !(MouseButtonState & (u32)Button);
+	bool PreviouslyDown = PrevMouseButtonState & (u32)Button;
+	return CurrentlyUp & PreviouslyDown;
+}
+bool WasMouseButtonPressed(mouse_button Button) {
+	bool CurrentlyDown = MouseButtonState & (u32)Button;
+	bool PreviouslyUp = !(PrevMouseButtonState & (u32)Button);
+	return CurrentlyDown & PreviouslyUp;
+}
 
 #undef CreateWindow
-void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Height) {
+void CreateWindow(const string8 &Title, u32 Width, u32 Height) {
 
-	DeferredPop(Arena);
+	DeferredPop(&TempArena);
 
 	HMODULE hInstance = GetModuleHandle(0);
 
-	wchar_t *WindowTitle = 0;
-	{
-		s32 Length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS | MB_PRECOMPOSED, (const char *)Title.Data, Title.Length, 0, 0);
-		Assert(Length);
-		WindowTitle = (wchar_t *)Push(Arena, Length, sizeof(wchar_t));
-		s32 Result = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS | MB_PRECOMPOSED, (const char *)Title.Data, Title.Length, WindowTitle, Length * sizeof(wchar_t));
-		Assert(Result);
-	}
+	wchar_t *WindowTitle = WideStringFromString8(Title);
 
 	{
 		WNDCLASSW WindowClass = {0};
@@ -394,16 +432,16 @@ void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Heig
 	}
 
 	{
-		RAWINPUTDEVICE RID[1] = {};
-		RID[0].usUsagePage = 0x01, // HID_USAGE_PAGE_GENERIC
-		RID[0].usUsage = 0x06, // KEYBOARD
-		RID[0].dwFlags = 0,
+		RAWINPUTDEVICE RID[2] = {};
+		RID[0].usUsagePage = 0x01; // HID_USAGE_PAGE_GENERIC
+		RID[0].usUsage = 0x06; // KEYBOARD
+		RID[0].dwFlags = 0;
 		RID[0].hwndTarget = WindowHandle;
 
-		// RID[1].usUsagePage = 0x01, // HID_USAGE_PAGE_GENERIC
-		// RID[1].usUsage = 0x02, // MOUSE
-		// RID[1].dwFlags = RIDEV_NOLEGACY,
-		// RID[1].hwndTarget = WindowHandle;
+		RID[1].usUsagePage = 0x01; // HID_USAGE_PAGE_GENERIC
+		RID[1].usUsage = 0x02; // MOUSE
+		RID[1].dwFlags = 0;
+		RID[1].hwndTarget = WindowHandle;
 
 		UINT Result = RegisterRawInputDevices(RID, array_len(RID), sizeof(RAWINPUTDEVICE));
 		Assert(Result);
@@ -412,56 +450,21 @@ void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Heig
 void ResizeWindow(u32 Width, u32 Height) {
 
 }
-bool ShouldWindowClose(memory_arena *Arena) {
-	MSG msg;
+bool ShouldWindowClose() {
+	DeferredPop(&TempArena);
 
 	PrevControllerState = ControllerState;
 	PrevKeyboardState = KeyboardState;
-
+	PrevMouseButtonState = MouseButtonState;
 	MouseDelta = 0;
 	MouseWheelDelta = 0;
 
 	{
-		u32 Size = 0;
-		u32 Result = GetRawInputBuffer(0, &Size, sizeof(RAWINPUTHEADER));
-		if (Result == -1) {
-			Break();
-		}
-		RAWINPUT* Input = (RAWINPUT *)PushAligned(Arena, Size, sizeof(RAWINPUT), 16);
-		Size *= 8;
-		int StructsWritten = GetRawInputBuffer(Input, &Size, sizeof(RAWINPUTHEADER));
-		if (StructsWritten == -1) {
-			DWORD ErrorCode = GetLastError();
-			Break();
-		} else {
-			RAWINPUT* PRI = Input;
-			for (u32 i = 0; i < StructsWritten; ++i) {
-				if (PRI->header.dwType == RIM_TYPEKEYBOARD) {
-					RAWKEYBOARD Keyboard = PRI->data.keyboard;
-					u32 MakeCode = Keyboard.MakeCode;
-					if (Keyboard.Flags & RI_KEY_E0) {
-						MakeCode |= 0xE000;
-					}
-					scan_code ScanCode = (scan_code)MakeCode;
-					bool KeyDown = !(Keyboard.Flags & RI_KEY_BREAK);
-					u32 Count = (u32)key::Count;
-					key Key = KeyFromScanCode(ScanCode);
-
-					if (KeyDown) {
-						KeyboardState = SetBit(KeyboardState, (u32)Key);
-					} else {
-						KeyboardState = ClearBit(KeyboardState, (u32)Key);
-					}
-				}
-				typedef u64 QWORD;
-				PRI = NEXTRAWINPUTBLOCK(PRI);
-			}
-		}
 	}
 
-
-	while (PeekMessageA(&msg, WindowHandle, 0, 0, PM_REMOVE)) {
-		DispatchMessageA(&msg);
+	MSG Message;
+	while (PeekMessage(&Message, WindowHandle, 0, 0, PM_REMOVE)) {
+		DispatchMessage(&Message);
 	}
 
 	XINPUT_STATE XinputState;
@@ -496,6 +499,9 @@ bool ShouldWindowClose(memory_arena *Arena) {
 		ControllerState = 0;
 		PrevKeyboardState = 0;
 		KeyboardState = 0;
+		MouseButtonState = 0;
+		MouseWheelDelta = 0;
+		MouseDelta = 0;
 	}
 
 	return ShouldClose;
@@ -511,28 +517,77 @@ LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM l
 	
 	switch (Msg) {
 		case WM_INPUT: {
-			// UINT Size = sizeof(RAWINPUT);
-			// RAWINPUT RawInput = {0};
+			RAWINPUT Input;
+			u32 Size = sizeof(RAWINPUT);
+			UINT Result = GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &Input, &Size, sizeof(RAWINPUTHEADER));
+			if (!Result) {
+				return 0;
+			}
+			switch (Input.header.dwType) {
+				case RIM_TYPEKEYBOARD: {
+					RAWKEYBOARD Keyboard = Input.data.keyboard;
+					u32 MakeCode = Keyboard.MakeCode;
+					if (Keyboard.Flags & RI_KEY_E0) {
+						MakeCode |= 0xE000;
+					}
+					scan_code ScanCode = (scan_code)MakeCode;
+					bool KeyDown = !(Keyboard.Flags & RI_KEY_BREAK);
+					u32 Count = (u32)key::Count;
+					key Key = KeyFromScanCode(ScanCode);
 
-			// UINT Result = GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &RawInput, &Size, sizeof(RAWINPUTHEADER));
-			// if (!Result) {
-			// 	return 0;
-			// }
+					if (KeyDown) {
+						KeyboardState = SetBit(KeyboardState, (u32)Key);
+					} else {
+						KeyboardState = ClearBit(KeyboardState, (u32)Key);
+					}
+				} break;
+				case RIM_TYPEMOUSE: {
+					RAWMOUSE Mouse = Input.data.mouse;
+					if (Mouse.usFlags == MOUSE_MOVE_RELATIVE) {
+						s64 LastX = Mouse.lLastX;
+						s64 LastY = Mouse.lLastY;
+					} else {
+						// I presume this only happens on RDP or weird situations like that?
+						Break();
+					}
 
-			// if (RawInput.header.dwType == RIM_TYPEKEYBOARD) {
-			// }
-
-			// if (RawInput.header.dwType == RIM_TYPEMOUSE) {
-			// 	RAWMOUSE Mouse = RawInput.data.mouse;
-
-			// 	if (Mouse.usFlags & MOUSE_MOVE_RELATIVE) {
-			// 		s32
-			// 	}
-
-			// 	return 0;
-			// }
-
-			break;
+					u32 ButtonFlags = Mouse.usButtonFlags;
+					if (ButtonFlags & RI_MOUSE_BUTTON_1_DOWN) {
+						MouseButtonState |= (u32)mouse_button::LeftMouseButton;
+						DebugOutput("Left Click!\n");
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_1_UP) {
+						MouseButtonState &= ~((u32)mouse_button::LeftMouseButton);
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_2_DOWN) {
+						MouseButtonState |= (u32)mouse_button::RightMouseButton;
+						DebugOutput("Right Click!\n");
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_2_UP) {
+						MouseButtonState &= ~((u32)mouse_button::RightMouseButton);
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_3_DOWN) {
+						MouseButtonState |= (u32)mouse_button::MiddleMouseButton;
+						DebugOutput("Middle Click!\n");
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_3_UP) {
+						MouseButtonState &= ~((u32)mouse_button::MiddleMouseButton);
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_4_DOWN) {
+						MouseButtonState |= (u32)mouse_button::XButton1;
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_4_UP) {
+						MouseButtonState &= ~((u32)mouse_button::XButton1);
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_5_DOWN) {
+						MouseButtonState |= (u32)mouse_button::XButton2;
+					}
+					if (ButtonFlags & RI_MOUSE_BUTTON_5_UP) {
+						MouseButtonState &= ~((u32)mouse_button::XButton2);
+					}
+				} break;
+			}
+			return 0;
 		}
 		case WM_DESTROY:
 		case WM_CLOSE:
@@ -553,6 +608,7 @@ extern "C" void __CxxFrameHandler4() { }
 #endif
 
 void _AppMain() {
+	ArenaInit(&TempArena, MB(256), TB(8));
 	s32 Result = AppMain();
 	ExitProcess(Result);
 }

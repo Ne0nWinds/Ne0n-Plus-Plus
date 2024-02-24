@@ -26,29 +26,3 @@ MATHCALL u128 operator~(u128 a) {
 	u128 Result = ~a.Value;
 	return Result;
 }
-MATHCALL u128 SetBit(const u128 &a, u32 Bit) {
-	Assert(Bit < 128);
-	u128 Result = a;
-
-	u32 Index = Bit / 32;
-	u32 BitShift = Bit % 32 - 1;
-	u32 BitToSet = 1 << (BitShift);
-
-	u32 *Values = (u32 *)&Result.Value;
-	Values[Index] |= BitToSet;
-
-	return Result;
-}
-MATHCALL u128 ClearBit(const u128 &a, u32 Bit) {
-	Assert(Bit < 128);
-	u128 Result = a;
-
-	u32 Index = Bit / 32;
-	u32 BitShift = Bit % 32 - 1;
-	u32 BitToClear = 1 << (BitShift);
-
-	u32 *Values = (u32 *)&Result.Value;
-	Values[Index] &= ~BitToClear;
-
-	return Result;
-}
