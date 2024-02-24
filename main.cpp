@@ -1,5 +1,9 @@
 #include "base.h"
 
+// Todo List:
+// - Mouse Input
+// - Error Handling
+
 s32 AppMain(void) {
 	memory_arena Arena = {0};
 	ArenaInit(&Arena, MB(256), TB(8));
@@ -7,10 +11,8 @@ s32 AppMain(void) {
 	constexpr string8 WindowTitle = u8"¿Qué?";
 	CreateWindow(&Arena, WindowTitle, 1280, 720);
 
-	u32 count = (u32)key::Count;
-
-	while (!ShouldWindowClose()) {
-		bool k = WasKeyReleased(key::Space);
+	while (!ShouldWindowClose(&Arena)) {
+		bool k = IsKeyDown(key::Space);
 		if (k) {
 			Break();
 		}

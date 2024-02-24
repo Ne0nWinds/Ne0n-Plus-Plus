@@ -331,6 +331,16 @@ bool WasKeyPressed(key Key) {
 	return CurrentlyDown & PreviouslyUp;
 }
 
+v2 MouseDelta;
+s32 MouseWheelDelta;
+
+v2 GetMouseDelta() {
+	return MouseDelta;
+}
+s32 GetMouseWheelDelta() {
+	return MouseWheelDelta;
+}
+
 #undef CreateWindow
 void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Height) {
 
@@ -386,9 +396,14 @@ void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Heig
 	{
 		RAWINPUTDEVICE RID[1] = {};
 		RID[0].usUsagePage = 0x01, // HID_USAGE_PAGE_GENERIC
-		RID[0].usUsage = 0x06,
+		RID[0].usUsage = 0x06, // KEYBOARD
 		RID[0].dwFlags = 0,
 		RID[0].hwndTarget = WindowHandle;
+
+		// RID[1].usUsagePage = 0x01, // HID_USAGE_PAGE_GENERIC
+		// RID[1].usUsage = 0x02, // MOUSE
+		// RID[1].dwFlags = RIDEV_NOLEGACY,
+		// RID[1].hwndTarget = WindowHandle;
 
 		UINT Result = RegisterRawInputDevices(RID, array_len(RID), sizeof(RAWINPUTDEVICE));
 		Assert(Result);
@@ -397,22 +412,56 @@ void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Heig
 void ResizeWindow(u32 Width, u32 Height) {
 
 }
-bool ShouldWindowClose() {
+bool ShouldWindowClose(memory_arena *Arena) {
 	MSG msg;
 
 	PrevControllerState = ControllerState;
 	PrevKeyboardState = KeyboardState;
 
-	while (PeekMessageA(&msg, WindowHandle, 0, 0, PM_REMOVE)) {
-		DispatchMessageA(&msg);
+	MouseDelta = 0;
+	MouseWheelDelta = 0;
+
+	{
+		u32 Size = 0;
+		u32 Result = GetRawInputBuffer(0, &Size, sizeof(RAWINPUTHEADER));
+		if (Result == -1) {
+			Break();
+		}
+		RAWINPUT* Input = (RAWINPUT *)PushAligned(Arena, Size, sizeof(RAWINPUT), 16);
+		Size *= 8;
+		int StructsWritten = GetRawInputBuffer(Input, &Size, sizeof(RAWINPUTHEADER));
+		if (StructsWritten == -1) {
+			DWORD ErrorCode = GetLastError();
+			Break();
+		} else {
+			RAWINPUT* PRI = Input;
+			for (u32 i = 0; i < StructsWritten; ++i) {
+				if (PRI->header.dwType == RIM_TYPEKEYBOARD) {
+					RAWKEYBOARD Keyboard = PRI->data.keyboard;
+					u32 MakeCode = Keyboard.MakeCode;
+					if (Keyboard.Flags & RI_KEY_E0) {
+						MakeCode |= 0xE000;
+					}
+					scan_code ScanCode = (scan_code)MakeCode;
+					bool KeyDown = !(Keyboard.Flags & RI_KEY_BREAK);
+					u32 Count = (u32)key::Count;
+					key Key = KeyFromScanCode(ScanCode);
+
+					if (KeyDown) {
+						KeyboardState = SetBit(KeyboardState, (u32)Key);
+					} else {
+						KeyboardState = ClearBit(KeyboardState, (u32)Key);
+					}
+				}
+				typedef u64 QWORD;
+				PRI = NEXTRAWINPUTBLOCK(PRI);
+			}
+		}
 	}
 
-	HWND ActiveWindow = GetActiveWindow();
-	if (ActiveWindow != WindowHandle) {
-		PrevControllerState = 0;
-		ControllerState = 0;
-		PrevKeyboardState = 0;
-		KeyboardState = 0;
+
+	while (PeekMessageA(&msg, WindowHandle, 0, 0, PM_REMOVE)) {
+		DispatchMessageA(&msg);
 	}
 
 	XINPUT_STATE XinputState;
@@ -441,6 +490,14 @@ bool ShouldWindowClose() {
 		ControllerState = XinputState.Gamepad.wButtons;
 	}
 
+	HWND ActiveWindow = GetActiveWindow();
+	if (ActiveWindow != WindowHandle) {
+		PrevControllerState = 0;
+		ControllerState = 0;
+		PrevKeyboardState = 0;
+		KeyboardState = 0;
+	}
+
 	return ShouldClose;
 }
 
@@ -454,32 +511,28 @@ LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM l
 	
 	switch (Msg) {
 		case WM_INPUT: {
-			UINT Size = sizeof(RAWINPUT);
-			RAWINPUT RawInput = {0};
+			// UINT Size = sizeof(RAWINPUT);
+			// RAWINPUT RawInput = {0};
 
-			UINT Result = GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &RawInput, &Size, sizeof(RAWINPUTHEADER));
-			if (!Result) {
-				return 0;
-			}
+			// UINT Result = GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &RawInput, &Size, sizeof(RAWINPUTHEADER));
+			// if (!Result) {
+			// 	return 0;
+			// }
 
-			if (RawInput.header.dwType == RIM_TYPEKEYBOARD) {
-				u32 MakeCode = RawInput.data.keyboard.MakeCode;
-				if (RawInput.data.keyboard.Flags & RI_KEY_E0) {
-					MakeCode |= 0xE000;
-				}
-				scan_code ScanCode = (scan_code)MakeCode;
-				bool KeyDown = !(RawInput.data.keyboard.Flags & RI_KEY_BREAK);
-				u32 Count = (u32)key::Count;
-				key Key = KeyFromScanCode(ScanCode);
+			// if (RawInput.header.dwType == RIM_TYPEKEYBOARD) {
+			// }
 
-				if (KeyDown) {
-					KeyboardState = SetBit(KeyboardState, (u32)Key);
-				} else {
-					KeyboardState = ClearBit(KeyboardState, (u32)Key);
-				}
-			}
+			// if (RawInput.header.dwType == RIM_TYPEMOUSE) {
+			// 	RAWMOUSE Mouse = RawInput.data.mouse;
 
-			return 0;
+			// 	if (Mouse.usFlags & MOUSE_MOVE_RELATIVE) {
+			// 		s32
+			// 	}
+
+			// 	return 0;
+			// }
+
+			break;
 		}
 		case WM_DESTROY:
 		case WM_CLOSE:

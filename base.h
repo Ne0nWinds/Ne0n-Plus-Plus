@@ -474,7 +474,7 @@ constexpr u64 StringHash(const string8 &String);
 /* == Windowing / Input == */
 void CreateWindow(memory_arena *Arena, const string8 &Title, u32 Width, u32 Height);
 void ResizeWindow(u32 Width, u32 Height);
-bool ShouldWindowClose();
+bool ShouldWindowClose(memory_arena *Arena);
 s32 AppMain(void);
 
 enum class key : u32 {
@@ -613,9 +613,18 @@ bool IsButtonDown(button Button);
 bool IsButtonUp(button Button);
 bool WasButtonReleased(button Button);
 bool WasButtonPressed(button Button);
-
-v2 GetMouseMovement();
 v2 GetAnalogInput();
+
+enum class mouse_button : u32 {
+	LeftMouseButton,
+	RightMouseButton,
+	MiddleMouseButton,
+	XButton1,
+	XButton2,
+};
+
+v2 GetMouseDelta();
+s32 GetMouseWheelDelta();
 
 /* == Ray tracing == */
 
