@@ -9,10 +9,18 @@ s32 AppMain(void) {
 	CreateWindow(WindowTitle, 1280, 720);
 
 	while (!ShouldWindowClose()) {
-		bool b;
-		b = IsKeyDown(key::Q);
-		if (b) {
-			DebugOutput("Q\n");
+		if (WasButtonPressed(mouse_button::LeftMouseButton)) {
+			DebugOutput("Left Click!");
+		}
+		if (WasButtonPressed(mouse_button::RightMouseButton)) {
+			DebugOutput("Left Click!");
+		}
+		if (GetMouseDelta().x > 0.0f) {
+			DebugOutput("Mouse Moved Right\n");
+		} else if (GetMouseDelta().x < 0.0f) {
+			DebugOutput("Mouse Moved Left\n");
+		} else {
+			DebugOutput("Mouse Stopped\n");
 		}
 	}
 

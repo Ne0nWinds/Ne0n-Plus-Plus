@@ -629,10 +629,10 @@ enum class key : u32 {
 	Count
 };
 
-bool IsKeyDown(key Key);
-bool IsKeyUp(key Key);
-bool WasKeyReleased(key Key);
-bool WasKeyPressed(key Key);
+bool IsButtonDown(key Key);
+bool IsButtonUp(key Key);
+bool WasButtonReleased(key Key);
+bool WasButtonPressed(key Key);
 
 enum class button : u32 {
 	DPadUp         = 0,
@@ -668,10 +668,10 @@ enum class mouse_button : u32 {
 
 v2 GetMouseDelta();
 s32 GetMouseWheelDelta();
-bool IsMouseButtonDown(mouse_button Button);
-bool IsMouseButtonUp(mouse_button Button);
-bool WasMouseButtonReleased(mouse_button Button);
-bool WasMouseButtonPressed(mouse_button Button);
+bool IsButtonDown(mouse_button Button);
+bool IsButtonUp(mouse_button Button);
+bool WasButtonReleased(mouse_button Button);
+bool WasButtonPressed(mouse_button Button);
 
 /* == Ray tracing == */
 

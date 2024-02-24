@@ -337,21 +337,21 @@ bool WasButtonPressed(button Button) {
 	return CurrentlyDown & PreviouslyUp;
 }
 
-bool IsKeyDown(key Key) {
+bool IsButtonDown(key Key) {
 	u128 BitPosition = SetBit(0, (u32)Key);
 	return KeyboardState & BitPosition;
 }
-bool IsKeyUp(key Key) {
+bool IsButtonUp(key Key) {
 	u128 BitPosition = SetBit(0, (u32)Key);
 	return !(KeyboardState & BitPosition);
 }
-bool WasKeyReleased(key Key) {
+bool WasButtonReleased(key Key) {
 	u128 BitPosition = SetBit(0, (u32)Key);
 	bool CurrentlyUp = !(KeyboardState & BitPosition);
 	bool PreviouslyDown = (PrevKeyboardState & BitPosition);
 	return CurrentlyUp & PreviouslyDown;
 }
-bool WasKeyPressed(key Key) {
+bool WasButtonPressed(key Key) {
 	u128 BitPosition = SetBit(0, (u32)Key);
 	bool CurrentlyDown = KeyboardState & BitPosition;
 	bool PreviouslyUp = !(PrevKeyboardState & BitPosition);
@@ -369,18 +369,18 @@ v2 GetMouseDelta() {
 s32 GetMouseWheelDelta() {
 	return MouseWheelDelta;
 }
-bool IsMouseButtonDown(mouse_button Button) {
+bool IsButtonDown(mouse_button Button) {
 	return MouseButtonState & (u32)Button;
 }
-bool IsMouseButtonUp(mouse_button Button) {
+bool IsButtonUp(mouse_button Button) {
 	return !(MouseButtonState & (u32)Button);
 }
-bool WasMouseButtonReleased(mouse_button Button) {
+bool WasButtonReleased(mouse_button Button) {
 	bool CurrentlyUp = !(MouseButtonState & (u32)Button);
 	bool PreviouslyDown = PrevMouseButtonState & (u32)Button;
 	return CurrentlyUp & PreviouslyDown;
 }
-bool WasMouseButtonPressed(mouse_button Button) {
+bool WasButtonPressed(mouse_button Button) {
 	bool CurrentlyDown = MouseButtonState & (u32)Button;
 	bool PreviouslyUp = !(PrevMouseButtonState & (u32)Button);
 	return CurrentlyDown & PreviouslyUp;
@@ -504,6 +504,7 @@ bool ShouldWindowClose() {
 		MouseDelta = 0;
 	}
 
+	Sleep(1);
 	return ShouldClose;
 }
 
@@ -546,6 +547,8 @@ LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM l
 					if (Mouse.usFlags == MOUSE_MOVE_RELATIVE) {
 						s64 LastX = Mouse.lLastX;
 						s64 LastY = Mouse.lLastY;
+						MouseDelta.x = (f32)LastX;
+						MouseDelta.y = (f32)LastY;
 					} else {
 						// I presume this only happens on RDP or weird situations like that?
 						Break();
@@ -554,21 +557,18 @@ LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM l
 					u32 ButtonFlags = Mouse.usButtonFlags;
 					if (ButtonFlags & RI_MOUSE_BUTTON_1_DOWN) {
 						MouseButtonState |= (u32)mouse_button::LeftMouseButton;
-						DebugOutput("Left Click!\n");
 					}
 					if (ButtonFlags & RI_MOUSE_BUTTON_1_UP) {
 						MouseButtonState &= ~((u32)mouse_button::LeftMouseButton);
 					}
 					if (ButtonFlags & RI_MOUSE_BUTTON_2_DOWN) {
 						MouseButtonState |= (u32)mouse_button::RightMouseButton;
-						DebugOutput("Right Click!\n");
 					}
 					if (ButtonFlags & RI_MOUSE_BUTTON_2_UP) {
 						MouseButtonState &= ~((u32)mouse_button::RightMouseButton);
 					}
 					if (ButtonFlags & RI_MOUSE_BUTTON_3_DOWN) {
 						MouseButtonState |= (u32)mouse_button::MiddleMouseButton;
-						DebugOutput("Middle Click!\n");
 					}
 					if (ButtonFlags & RI_MOUSE_BUTTON_3_UP) {
 						MouseButtonState &= ~((u32)mouse_button::MiddleMouseButton);
