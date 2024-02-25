@@ -151,10 +151,6 @@ struct u128;
 	#include "operators.h"
 #endif
 
-#define abs(a) ((a < 0) ? a * -1 : a)
-#define min(a, b) ((a < b) ? a : b)
-#define max(a, b) ((a > b) ? a : b)
-
 MATHCALL s32 s32_abs(s32 a);
 MATHCALL s64 s64_abs(s64 a);
 MATHCALL u32 u32_min(u32 a, u32 b);
@@ -414,6 +410,7 @@ void ErrorAccumulationEnd();
 
 /* == Profiling / Timing == */
 u64 TimerSample();
+f64 TimestampToSeconds(u64 *Time);
 
 /* == Memory == */
 
@@ -455,23 +452,23 @@ void Pop(void *Ptr);
 // void *PushChainedAligned(memory_arena *Arena, u64 Size, u64 Count, u32 Alignment);
 // void PopChained(memory_arena *Arena, void *Ptr);
 
-struct DeferredPop_ {
+struct deferred_pop {
 	memory_arena *Arena;
 	void *Ptr;
-	inline DeferredPop_(memory_arena *Arena) {
+	inline deferred_pop(memory_arena *Arena) {
 		this->Arena = Arena;
 		this->Ptr = Arena->Offset;
 	}
-	inline DeferredPop_() {
+	inline deferred_pop() {
 		this->Arena = &TempArena;
 		this->Ptr = TempArena.Offset;
 	}
 
-	inline ~DeferredPop_() {
+	inline ~deferred_pop() {
 		ArenaPop(Arena, Ptr);
 	}
 };
-#define DeferredPop(Arena) DeferredPop_ dp_ = DeferredPop_(Arena);
+#define DeferredPop(Arena) deferred_pop dp_ = deferred_pop(Arena);
 
 // struct chained_arena
 
@@ -673,9 +670,48 @@ bool IsButtonUp(mouse_button Button);
 bool WasButtonReleased(mouse_button Button);
 bool WasButtonPressed(mouse_button Button);
 
-/* == Ray tracing == */
+/* == Graphics == */
 
-/* == Rasterization == */
+struct m2 {
+	v2 X;
+	v2 Y;
+
+	inline constexpr v2 &operator[](u32 Index) {
+		Assert(Index < 2);
+		if (Index == 0) return X;
+		return Y;
+	}
+
+	constexpr MATHCALL m2 Identity() {
+		m2 Result = {0};
+		Result[0][0] = 1.0f;
+		Result[1][1] = 1.0f;
+		return Result;
+	}
+};
+
+enum class format : u32 {
+	R32B32G32A32_F32 = 0x1,
+	R8B8G8A8_U32
+};
+
+struct image {
+	void *Data;
+	u32 Width, Height;
+	format Format;
+};
+
+void ClearBackground(v3 Color);
+image CreateImage(memory_arena *Arena, u32 Width, u32 Height, format Format);
+
+u32 CreateTextureFromImage(image Image);
+void BlitTexture(u32 Texture);
+void DeleteTexture(u32 Texture);
+
+void PushMatrix(m2 Matrix);
+void PopMatrix();
+
+void Draw();
 
 /* == Sound == */
 

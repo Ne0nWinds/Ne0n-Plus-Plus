@@ -1,9 +1,19 @@
-#include "base.h"
-
 #define UNICODE
 #define WIN32_LEAN_AND_MEAN 1
 #include <Windows.h>
 #include <Xinput.h>
+
+#undef CreateWindow
+#undef ZeroMemory
+
+#include "base.h"
+
+#ifdef RENDERAPI_D3D11
+#pragma comment(lib, "d3d11.lib")
+#include "d3d11_api.h"
+#else
+#include "opengl_api.h"
+#endif
 
 static inline wchar_t *WideStringFromString8(const string8 &String) {
 	s32 Length = MultiByteToWideChar(CP_UTF8, MB_ERR_INVALID_CHARS | MB_PRECOMPOSED, (const char *)String.Data, String.Length + 1, 0, 0);
@@ -21,7 +31,6 @@ static inline wchar_t *WideStringFromString8(const string8 &String) {
 	return Result;
 	return 0;
 }
-
 
 void DebugOutput(const string8 &String) {
 	wchar_t *WideString = WideStringFromString8(String);
@@ -386,7 +395,6 @@ bool WasButtonPressed(mouse_button Button) {
 	return CurrentlyDown & PreviouslyUp;
 }
 
-#undef CreateWindow
 void CreateWindow(const string8 &Title, u32 Width, u32 Height) {
 
 	DeferredPop(&TempArena);
@@ -446,6 +454,10 @@ void CreateWindow(const string8 &Title, u32 Width, u32 Height) {
 		UINT Result = RegisterRawInputDevices(RID, array_len(RID), sizeof(RAWINPUTDEVICE));
 		Assert(Result);
 	}
+
+	{
+		Win32RendererInit(WindowHandle, Width, Height);
+	}
 }
 void ResizeWindow(u32 Width, u32 Height) {
 
@@ -458,9 +470,6 @@ bool ShouldWindowClose() {
 	PrevMouseButtonState = MouseButtonState;
 	MouseDelta = 0;
 	MouseWheelDelta = 0;
-
-	{
-	}
 
 	MSG Message;
 	while (PeekMessage(&Message, WindowHandle, 0, 0, PM_REMOVE)) {
@@ -504,7 +513,6 @@ bool ShouldWindowClose() {
 		MouseDelta = 0;
 	}
 
-	Sleep(1);
 	return ShouldClose;
 }
 
@@ -514,16 +522,18 @@ u64 TimerSample() {
 	return PerformanceCounter.QuadPart;
 }
 
+f64 TimestampToSeconds(u64 *Timestamp) {
+	return (f64)*Timestamp / (f64)PerformanceFrequency.QuadPart;
+}
+
 LRESULT CALLBACK WindowProc(HWND WindowHandle, UINT Msg, WPARAM wParam, LPARAM lParam) {
 	
 	switch (Msg) {
 		case WM_INPUT: {
-			RAWINPUT Input;
+			RAWINPUT Input = {0};
 			u32 Size = sizeof(RAWINPUT);
 			UINT Result = GetRawInputData((HRAWINPUT)lParam, RID_INPUT, &Input, &Size, sizeof(RAWINPUTHEADER));
-			if (!Result) {
-				return 0;
-			}
+			if (!Result) { return 0; }
 			switch (Input.header.dwType) {
 				case RIM_TYPEKEYBOARD: {
 					RAWKEYBOARD Keyboard = Input.data.keyboard;
@@ -608,7 +618,7 @@ extern "C" void __CxxFrameHandler4() { }
 #endif
 
 void _AppMain() {
-	ArenaInit(&TempArena, MB(256), TB(8));
+	ArenaInit(&TempArena, MB(64), TB(8));
 	s32 Result = AppMain();
 	ExitProcess(Result);
 }

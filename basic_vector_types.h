@@ -43,6 +43,12 @@ struct alignas(16) v4 {
 	force_inline constexpr v4(const v3& a, f32 b) : x(a.x), y(a.y), z(a.z), w(b) { }
 	force_inline constexpr v4(f32 a, const v3& b) : x(a), y(b.x), z(b.y), w(b.z) { }
 
+	inline constexpr f32 operator[](u32 Index) const {
+		Assert(Index < 3);
+		f32 *Array = (f32 *)this;
+		return Array[Index];
+	}
+
 	inline constexpr f32 &operator[](u32 Index) {
 		Assert(Index < 3);
 		f32 *Array = (f32 *)this;
@@ -61,6 +67,12 @@ struct alignas(32) v8 {
 	force_inline constexpr v8(f32 n) : Data {n,n,n,n,n,n,n,n} { }
 	force_inline constexpr v8(v4 a, v4 b) : V4 { a, b } { }
 
+	inline constexpr f32 operator[](u32 Index) const {
+		Assert(Index < array_len(Data));
+		const f32 Result = Data[Index];
+		return Result;
+	}
+
 	inline constexpr f32 &operator[](u32 Index) {
 		Assert(Index < array_len(Data));
 		return Data[Index];
@@ -78,6 +90,11 @@ struct alignas(8) u32x2 {
 	force_inline constexpr u32x2(u32 n) : x(n), y(n) { }
 	explicit force_inline constexpr u32x2(bool n) : _u64(~(u64)n + 1) { }
 	force_inline constexpr u32x2(u32 _x, u32 _y) : x(_x), y(_y) { }
+
+	inline constexpr u32 operator[](u32 Index) const {
+		Assert(Index < array_len(Data));
+		return Data[Index];
+	}
 
 	inline constexpr u32 &operator[](u32 Index) {
 		Assert(Index < array_len(Data));
@@ -98,6 +115,11 @@ struct alignas(16) u32x3 {
 	explicit force_inline constexpr u32x3(bool n) : _u64 { ~(u64)n + 1, ~(u64)n + 1 } { }
 	force_inline constexpr u32x3(u32 _x, u32 _y, u32 _z) : x(_x), y(_y), z(_z) { }
 
+	inline constexpr u32 operator[](u32 Index) const {
+		Assert(Index < array_len(Data));
+		return Data[Index];
+	}
+
 	inline constexpr u32 &operator[](u32 Index) {
 		Assert(Index < array_len(Data));
 		return Data[Index];
@@ -116,6 +138,11 @@ struct alignas(16) u32x4 {
 	explicit force_inline constexpr u32x4(u32x3 n) : x(n.x), y(n.y), z(n.z), w(0) { }
 	explicit force_inline constexpr u32x4(bool n) : _u64 { ~(u64)n + 1, ~(u64)n + 1 } { }
 	force_inline constexpr u32x4(u32 _x, u32 _y, u32 _z, u32 _w) : x(_x), y(_y), z(_z), w(_z) { }
+
+	inline constexpr u32 operator[](u32 Index) const {
+		Assert(Index < array_len(Data));
+		return Data[Index];
+	}
 
 	inline constexpr u32 &operator[](u32 Index) {
 		Assert(Index < array_len(Data));
@@ -137,6 +164,16 @@ struct alignas(32) u32x8 {
 	explicit force_inline constexpr u32x8(u32x3 n) : x(n.x), y(n.y), z(n.z), w(0) { }
 	explicit force_inline constexpr u32x8(u32x4 n) : x(n.x), y(n.y), z(n.z), w(n.w) { }
 	explicit force_inline constexpr u32x8(bool n) : U32x4 { ~(u32)n + 1, ~(u32)n + 1 } { }
+
+	inline constexpr u32 operator[](u32 Index) const {
+		Assert(Index < array_len(Data));
+		return Data[Index];
+	}
+
+	inline constexpr u32 &operator[](u32 Index) {
+		Assert(Index < array_len(Data));
+		return Data[Index];
+	}
 };
 
 #define define_operators(type1, type2) \

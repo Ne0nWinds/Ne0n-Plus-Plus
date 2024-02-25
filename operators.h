@@ -106,56 +106,50 @@ MATHCALL v4 operator/(const v4 &a, const v4 &b) {
 }
 MATHCALL v8 operator+(const v8 &a, const v8 &b) {
 	v8 Result = a;
-	a[0] += b[0];
-	a[1] += b[1];
-	a[2] += b[2];
-	a[3] += b[3];
-	a[4] += b[4];
-	a[5] += b[5];
-	a[6] += b[6];
-	a[7] += b[7];
+	Result[0] += b[0];
+	Result[1] += b[1];
+	Result[2] += b[2];
+	Result[3] += b[3];
+	Result[4] += b[4];
+	Result[5] += b[5];
+	Result[6] += b[6];
+	Result[7] += b[7];
 	return Result;
 }
 MATHCALL v8 operator-(const v8 &a, const v8 &b) {
 	v8 Result = a;
-	a[0] -= b[0];
-	a[1] -= b[1];
-	a[2] -= b[2];
-	a[3] -= b[3];
-	a[4] -= b[4];
-	a[5] -= b[5];
-	a[6] -= b[6];
-	a[7] -= b[7];
+	Result[0] -= b[0];
+	Result[1] -= b[1];
+	Result[2] -= b[2];
+	Result[3] -= b[3];
+	Result[4] -= b[4];
+	Result[5] -= b[5];
+	Result[6] -= b[6];
+	Result[7] -= b[7];
 	return Result;
-}
-MATHCALL void operator-=(v8 &a, const v8 &b) {
-	a = a - b;
 }
 MATHCALL v8 operator*(const v8 &a, const v8 &b) {
 	v8 Result = a;
-	a[0] *= b[0];
-	a[1] *= b[1];
-	a[2] *= b[2];
-	a[3] *= b[3];
-	a[4] *= b[4];
-	a[5] *= b[5];
-	a[6] *= b[6];
-	a[7] *= b[7];
+	Result[0] *= b[0];
+	Result[1] *= b[1];
+	Result[2] *= b[2];
+	Result[3] *= b[3];
+	Result[4] *= b[4];
+	Result[5] *= b[5];
+	Result[6] *= b[6];
+	Result[7] *= b[7];
 	return Result;
-}
-MATHCALL void operator*=(v8 &a, const v8 &b) {
-	a = a * b;
 }
 MATHCALL v8 operator/(const v8 &a, const v8 &b) {
 	v8 Result = a;
-	a[0] /= b[0];
-	a[1] /= b[1];
-	a[2] /= b[2];
-	a[3] /= b[3];
-	a[4] /= b[4];
-	a[5] /= b[5];
-	a[6] /= b[6];
-	a[7] /= b[7];
+	Result[0] /= b[0];
+	Result[1] /= b[1];
+	Result[2] /= b[2];
+	Result[3] /= b[3];
+	Result[4] /= b[4];
+	Result[5] /= b[5];
+	Result[6] /= b[6];
+	Result[7] /= b[7];
 	return Result;
 }
 MATHCALL v4 operator&(const v4 &a, const u32x4 &b) {

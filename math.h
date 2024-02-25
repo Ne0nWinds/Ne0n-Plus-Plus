@@ -198,3 +198,7 @@ MATHCALL v3 v3_lerp(const v3 &a, const v3 &b, f32 t) {
 MATHCALL v4 v4_lerp(const v4 &a, const v4 &b, f32 t) {
 	return (1.0f - t) * a + t * b;
 }
+
+#undef abs(a) ((a < 0) ? a * -1 : a)
+#undef min(a, b) ((a < b) ? a : b)
+#undef max(a, b) ((a > b) ? a : b)
